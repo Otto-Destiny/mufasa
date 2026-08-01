@@ -1,0 +1,62 @@
+# Local agent and editor state
+.agents/
+.codex/
+.vscode/
+
+# Secrets
+**/.env
+**/.env.*
+!**/.env.example
+
+# Python and notebook state
+**/__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+**/.ipynb_checkpoints/
+.venv/
+venv/
+
+# JavaScript and application builds
+**/node_modules/
+**/dist/
+**/build/
+**/target/
+
+# Local data-engineering workspaces and generated outputs
+/data-engineering/data-extraction/
+**/raw/
+**/downloads/
+**/artifacts/
+**/outputs/
+**/classification_output/
+**/parts/
+**/partitions/
+**/sub_partitions*/
+**/batches/
+**/states/
+*.log
+
+# Large model, document, database, and index artifacts
+*.gguf
+*.safetensors
+*.pt
+*.pth
+*.ckpt
+*.onnx
+*.pdf
+*.db
+*.sqlite
+*.sqlite3
+*.lbug
+*.index
+/model/
+
+# Tabular production artifacts. The reviewed public fixture is allowed.
+*.parquet
+!data-engineering/samples/classification-benchmark-200.parquet
+
+# Operating-system noise
+.DS_Store
+Thumbs.db
+desktop.ini

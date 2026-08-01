@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="430" viewBox="0 0 1500 430" role="img" aria-labelledby="title desc">
+  <title id="title">MUFASA data-engineering pipeline</title>
+  <desc id="desc">Scientific source discovery flows through metadata screening, rights checks, document parsing, evidence validation, and versioned datasets.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#365b8c"/>
+    </marker>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#17324d" flood-opacity="0.12"/>
+    </filter>
+  </defs>
+  <rect width="1500" height="430" rx="24" fill="#f5f8fc"/>
+  <text x="750" y="52" text-anchor="middle" font-family="Arial, sans-serif" font-size="28" font-weight="700" fill="#17324d">MUFASA Data Engineering</text>
+  <text x="750" y="82" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#52677f">From discoverable literature to versioned, evidence-grounded datasets</text>
+
+  <g font-family="Arial, sans-serif" filter="url(#shadow)">
+    <g transform="translate(45 130)">
+      <rect width="235" height="170" rx="18" fill="#e8f3eb" stroke="#2f7d4a" stroke-width="2"/>
+      <text x="117.5" y="48" text-anchor="middle" font-size="20" font-weight="700" fill="#205b35">1. Discover</text>
+      <text x="117.5" y="82" text-anchor="middle" font-size="15" fill="#294b37">OpenAlex and curated</text>
+      <text x="117.5" y="106" text-anchor="middle" font-size="15" fill="#294b37">African sources</text>
+      <text x="117.5" y="138" text-anchor="middle" font-size="14" fill="#52677f">IDs, DOI, title, abstract</text>
+    </g>
+    <g transform="translate(338 130)">
+      <rect width="235" height="170" rx="18" fill="#e8f0fb" stroke="#3567a8" stroke-width="2"/>
+      <text x="117.5" y="48" text-anchor="middle" font-size="20" font-weight="700" fill="#244f86">2. Screen</text>
+      <text x="117.5" y="82" text-anchor="middle" font-size="15" fill="#29445f">African relevance and</text>
+      <text x="117.5" y="106" text-anchor="middle" font-size="15" fill="#29445f">discipline classification</text>
+      <text x="117.5" y="138" text-anchor="middle" font-size="14" fill="#52677f">Include, review, exclude</text>
+    </g>
+    <g transform="translate(631 130)">
+      <rect width="235" height="170" rx="18" fill="#fff5dc" stroke="#b78218" stroke-width="2"/>
+      <text x="117.5" y="48" text-anchor="middle" font-size="20" font-weight="700" fill="#7b5710">3. Acquire</text>
+      <text x="117.5" y="82" text-anchor="middle" font-size="15" fill="#5e4b25">Rights and licence checks</text>
+      <text x="117.5" y="106" text-anchor="middle" font-size="15" fill="#5e4b25">Resumable PDF download</text>
+      <text x="117.5" y="138" text-anchor="middle" font-size="14" fill="#52677f">Manifest and checksums</text>
+    </g>
+    <g transform="translate(924 130)">
+      <rect width="235" height="170" rx="18" fill="#f2ebfa" stroke="#7751a8" stroke-width="2"/>
+      <text x="117.5" y="48" text-anchor="middle" font-size="20" font-weight="700" fill="#573780">4. Extract</text>
+      <text x="117.5" y="82" text-anchor="middle" font-size="15" fill="#4d3e60">Parse sections, tables</text>
+      <text x="117.5" y="106" text-anchor="middle" font-size="15" fill="#4d3e60">and evidence spans</text>
+      <text x="117.5" y="138" text-anchor="middle" font-size="14" fill="#52677f">Validate units and provenance</text>
+    </g>
+    <g transform="translate(1217 130)">
+      <rect width="235" height="170" rx="18" fill="#e8f5f5" stroke="#25818a" stroke-width="2"/>
+      <text x="117.5" y="48" text-anchor="middle" font-size="20" font-weight="700" fill="#17636a">5. Publish</text>
+      <text x="117.5" y="82" text-anchor="middle" font-size="15" fill="#31585c">Training records and</text>
+      <text x="117.5" y="106" text-anchor="middle" font-size="15" fill="#31585c">retrieval evidence</text>
+      <text x="117.5" y="138" text-anchor="middle" font-size="14" fill="#52677f">Versioned datasets</text>
+    </g>
+  </g>
+
+  <g stroke="#365b8c" stroke-width="3" fill="none" marker-end="url(#arrow)">
+    <path d="M280 215 H326"/>
+    <path d="M573 215 H619"/>
+    <path d="M866 215 H912"/>
+    <path d="M1159 215 H1205"/>
+  </g>
+  <text x="750" y="360" text-anchor="middle" font-family="Arial, sans-serif" font-size="15" fill="#52677f">Every retained record carries source identity, provenance, rights status, review state and a reproducible pipeline version.</text>
+</svg>
