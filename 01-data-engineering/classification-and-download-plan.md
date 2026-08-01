@@ -19,10 +19,10 @@ OpenAlex fields organize the queues. They do not determine the MUFASA discipline
 The rubric and taxonomy come from:
 
 - `MUFASA/README.md`
-- `MUFASA/model-engineering/model-training-pipeline.md`
-- `MUFASA/data-engineering/taxonomy/african-science-categories.md`
-- `MUFASA/data-engineering/taxonomy/categories/*.md`
-- `MUFASA/data-engineering/catalogs/materials-sources.md`
+- `MUFASA/02-model-engineering/model-training-pipeline.md`
+- `MUFASA/01-data-engineering/taxonomy/african-science-categories.md`
+- `MUFASA/01-data-engineering/taxonomy/categories/*.md`
+- `MUFASA/01-data-engineering/catalogs/materials-sources.md`
 
 `download_and_classify.md` contains useful background ideas, but it is not authoritative.
 

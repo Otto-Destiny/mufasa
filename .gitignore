@@ -24,7 +24,7 @@ venv/
 **/target/
 
 # Local data-engineering workspaces and generated outputs
-/data-engineering/data-extraction/
+/01-data-engineering/data-extraction/
 **/raw/
 **/downloads/
 **/artifacts/
@@ -54,7 +54,7 @@ venv/
 
 # Tabular production artifacts. The reviewed public fixture is allowed.
 *.parquet
-!data-engineering/samples/classification-benchmark-200.parquet
+!01-data-engineering/samples/classification-benchmark-200.parquet
 
 # Operating-system noise
 .DS_Store

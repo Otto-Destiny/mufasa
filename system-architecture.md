@@ -6,10 +6,10 @@ The bird's-eye view: four layers, two planes, and what actually ships.
 
 | Layer | What it does | Detail |
 |---|---|---|
-| **1 — Data** | Find African papers, check rights, parse them, extract scientific records | [data-engineering](./data-engineering/) |
-| **2 — Model** | Train MUFASA to reason about African science | [model-training-pipeline.md](./model-engineering/model-training-pipeline.md) |
-| **3 — Retrieval** | Turn records into an evidence graph and query it offline | [retrieval-architecture.md](./retrieval/retrieval-architecture.md) |
-| **4 — Application** | Orchestrate, validate and show the answer on a cheap laptop | [application-architecture.md](./application/application-architecture.md) |
+| **01 — Data** | Find African papers, check rights, parse them, extract scientific records | [data-engineering](./01-data-engineering/) |
+| **02 — Model** | Train MUFASA to reason about African science | [model-training-pipeline.md](./02-model-engineering/model-training-pipeline.md) |
+| **03 — Retrieval** | Turn records into an evidence graph and query it offline | [retrieval-architecture.md](./03-retrieval/retrieval-architecture.md) |
+| **04 — Application** | Orchestrate, validate and show the answer on a cheap laptop | [application-architecture.md](./04-application/application-architecture.md) |
 
 ## Two planes
 
@@ -103,7 +103,7 @@ runtime/               pinned llama.cpp launch settings and chat template
 mufasa-graph/          Ladybug package: graph, full-text, vectors,
                        and the quoted span behind every claim
 extensions/            Ladybug fts and vector binaries, bundled for offline use
-application/           Tauri desktop, local service and optional Wi-Fi web client
+04-application/        Tauri desktop, local service and optional Wi-Fi web client
 MANIFEST.sha256        hashes for all of the above, plus corpus version
 ```
 
@@ -115,10 +115,10 @@ The bundled `extensions/` folder is not optional. Ladybug downloads its full-tex
 
 | Layer | Gate | Measured by |
 |---|---|---|
-| 1 — Data | Nothing ships without a source and a rights record | Parse success rate, extraction accuracy on a checked sample |
-| 2 — Model | Beats the untouched base without regressions | Frozen benchmark, plus profiler: tokens/sec, peak RAM, thermals |
-| 3 — Retrieval | 30–50 frozen questions | Recall@10, citation precision, unsupported-claim rate, corpus-scoped abstention, p95 latency |
-| 4 — Application | Works offline, stays under the ceiling | Peak RSS, cold start, cancel works, network-off run |
+| 01 — Data | Nothing ships without a source and a rights record | Parse success rate, extraction accuracy on a checked sample |
+| 02 — Model | Beats the untouched base without regressions | Frozen benchmark, plus profiler: tokens/sec, peak RAM, thermals |
+| 03 — Retrieval | 30–50 frozen questions | Recall@10, citation precision, unsupported-claim rate, corpus-scoped abstention, p95 latency |
+| 04 — Application | Works offline, stays under the ceiling | Peak RSS, cold start, cancel works, network-off run |
 
 Measure each separately. A single end-to-end number cannot tell you which layer to fix.
 

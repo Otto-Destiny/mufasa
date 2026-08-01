@@ -8,10 +8,10 @@ MUFASA is an offline African scientific-reasoning project being developed for co
 
 ## Four layers
 
-1. [Data engineering](./data-engineering/) discovers, classifies and prepares African scientific evidence.
-2. [Model engineering](./model-engineering/) builds, evaluates and packages the compact MUFASA model.
-3. [Retrieval](./retrieval/) turns verified evidence into an offline GraphRAG package.
-4. [Application](./application/) orchestrates local inference, retrieval, validation and the user interface.
+- **01.** [Data engineering](./01-data-engineering/) discovers, classifies and prepares African scientific evidence.
+- **02.** [Model engineering](./02-model-engineering/) builds, evaluates and packages the compact MUFASA model.
+- **03.** [Retrieval](./03-retrieval/) turns verified evidence into an offline GraphRAG package.
+- **04.** [Application](./04-application/) orchestrates local inference, retrieval, validation and the user interface.
 
 The complete system design is described in [system-architecture.md](./system-architecture.md).
 
