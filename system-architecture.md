@@ -23,14 +23,15 @@ BUILD PLANE — your machines, hours or days, internet allowed
           ├─→ training datasets  → fine-tuning → validated GGUF
           └─→ evidence graph + indexes → versioned retrieval package
 
-RUNTIME PLANE — one laptop, milliseconds, no internet, 7 GB ceiling
+RUNTIME PLANE — laptop-hosted, milliseconds, no internet or cloud, 7 GB ceiling
 ──────────────────────────────────────────────────────────────
-  Question → orchestrator → retrieve → generate → validate → answer
+  Tauri or paired-phone question → laptop orchestrator → retrieve
+      → generate → validate → answer to the requesting interface
 ```
 
 Layer 1 is entirely build plane. Layer 2 is build plane, producing one file. Layer 3 spans both — it builds a package beforehand and queries it at runtime. Layer 4 is entirely runtime.
 
-Anything that needs the network, a frontier model, or more than a few hundred megabytes belongs above the line. That single test resolves most design arguments.
+Anything that needs the internet, an external service, a frontier model, or more than a few hundred megabytes belongs above the line. That single test resolves most design arguments.
 
 ## What each layer hands on
 
@@ -49,7 +50,7 @@ Anything that needs the network, a frontier model, or more than a few hundred me
 | Machine | Intel i5 10th–12th gen or Ryzen 5, integrated graphics, 8 GB DDR4, Ubuntu 22.04 |
 | Memory | **7 GB ceiling. Exceeding it, or crashing, scores zero** |
 | Runtime | **llama.cpp with GGUF only** |
-| Network | **None during evaluation** |
+| Connectivity | **No internet or cloud during evaluation.** The primary Tauri path works with all networking disabled; paired-phone local Wi-Fi is used only when permitted. |
 | Score | `0.50 × accuracy + 0.30 × speed + 0.20 × efficiency − thermal penalty` |
 | Efficiency | `100 × (7 GB − peak RAM) / 7 GB` |
 | Thermal | −10 above 85 °C or on throttling |
@@ -103,13 +104,13 @@ runtime/               pinned llama.cpp launch settings and chat template
 mufasa-graph/          Ladybug package: graph, full-text, vectors,
                        and the quoted span behind every claim
 extensions/            Ladybug fts and vector binaries, bundled for offline use
-04-application/        Tauri desktop, local service and optional Wi-Fi web client
+04-application/        Tauri desktop, laptop-local service and bundled mobile web app
 MANIFEST.sha256        hashes for all of the above, plus corpus version
 ```
 
 **No PDFs.** Every claim carries its sentence, page and study family — a couple of megabytes for 200 papers, against 300 MB of documents. It shows instantly, and it avoids redistributing papers you may not have the right to redistribute.
 
-The bundled `extensions/` folder is not optional. Ladybug downloads its full-text and vector extensions over the network on first use; on an offline machine that fails. Install once with internet, bundle the binaries, then verify with networking disabled.
+The bundled `extensions/` folder is not optional. Ladybug downloads its full-text and vector extensions over the internet on first use; on an offline machine that fails. Install once with internet, bundle the binaries, then verify the primary desktop path with all networking disabled.
 
 ## How each layer is checked
 
@@ -118,7 +119,7 @@ The bundled `extensions/` folder is not optional. Ladybug downloads its full-tex
 | 01 — Data | Nothing ships without a source and a rights record | Parse success rate, extraction accuracy on a checked sample |
 | 02 — Model | Beats the untouched base without regressions | Frozen benchmark, plus profiler: tokens/sec, peak RAM, thermals |
 | 03 — Retrieval | 30–50 frozen questions | Recall@10, citation precision, unsupported-claim rate, corpus-scoped abstention, p95 latency |
-| 04 — Application | Works offline, stays under the ceiling | Peak RSS, cold start, cancel works, network-off run |
+| 04 — Application | Works offline, stays under the ceiling | Peak RSS and cancel; clean Ubuntu 22.04 desktop cold-start with networking off; phone pairing and revoke with internet disconnected |
 
 Measure each separately. A single end-to-end number cannot tell you which layer to fix.
 
@@ -146,13 +147,13 @@ flowchart TB
 
     L3["<b>Layer 3 - GraphRAG, build half</b><br/>About 200 papers in one flagship domain<br/>Observation nodes in a Ladybug graph<br/>Full-text and vector indexes, extensions bundled"]:::process
 
-    GATE{"<b>Ready to ship?</b><br/>Extraction sampled and human-checked<br/>Model beats the untouched base<br/>Whole system verified with the network off"}:::gate
+    GATE{"<b>Ready to ship?</b><br/>Extraction sampled and human-checked<br/>Model beats the untouched base<br/>Desktop verified with all networking off"}:::gate
 
     REDO["Fix the weakest layer<br/>and rebuild"]:::reject
 
-    SHIP["<b>What ships - one offline package</b><br/>MUFASA GGUF plus pinned llama.cpp settings<br/>mufasa-graph and bundled extensions, no PDFs<br/>Tauri desktop, local service and optional Wi-Fi client<br/>MANIFEST.sha256 hashing all of it"]:::artifact
+    SHIP["<b>What ships - one offline package</b><br/>MUFASA GGUF plus pinned llama.cpp settings<br/>mufasa-graph and bundled extensions, no PDFs<br/>Tauri desktop, local service and mobile web app<br/>MANIFEST.sha256 hashing all of it"]:::artifact
 
-    L4["<b>Layer 4 - Application, on the laptop</b><br/>Orchestrates everything, one generation at a time<br/>Context, output, thread and buffer caps<br/><i>Runtime plane - no internet, 7 GB ceiling</i>"]:::deploy
+    L4["<b>Layer 4 - Application</b><br/>Primary Tauri desktop plus compute-thin mobile web app<br/>All inference, retrieval and persistent data stay on laptop<br/><i>No internet or cloud, 7 GB laptop ceiling</i>"]:::deploy
 
     RUN["<b>Answering a question</b><br/>Retrieve 6 to 10 Observations, one hop<br/>Generate a short answer, then validate it<br/>Show quoted spans, page numbers and coverage"]:::process
 
@@ -184,6 +185,6 @@ flowchart TB
 
 Layers 2 and 3 both branch from Layer 1, because the training datasets and the evidence graph are two products of the same parsing work. They rejoin at the release gate.
 
-Everything above the release gate is the **build plane** — your machines, internet allowed, run once. Everything below it is the **runtime plane** — one laptop, no network, 7 GB ceiling. That line is the most useful boundary in the whole system: if a design needs the network, a frontier model, or serious memory, it belongs above it.
+Everything above the release gate is the **build plane** — your machines, internet allowed, run once. Everything below it is the **runtime plane** — all compute on one laptop, no internet or cloud, 7 GB ceiling. The desktop needs no network at all; local Wi-Fi is only a private transport for the mobile interface. If a design needs an external service, a frontier model, or serious memory, it belongs above the line.
 
 The feedback arrow deliberately routes back to Layer 1 rather than into training directly. A person reads it first.
