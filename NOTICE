@@ -1,0 +1,27 @@
+MUFASA — Models for Understanding the Frontiers of African Scientific Advancement
+Copyright 2026 Eagle Team
+
+This product includes software developed for the Laptop LLM Challenge
+(African Deep Tech Challenge 2026).
+
+Licensed under the Apache License, Version 2.0. See the LICENSE file.
+
+---
+
+Scope of this licence
+
+The Apache 2.0 licence covers the source code, documentation, schemas and
+configuration in this repository.
+
+It does NOT grant rights over third-party material that MUFASA processes or
+depends on:
+
+  * Scientific papers and their contents remain under their original
+    publishers' terms. This repository records a licence and rights entry per
+    paper; those terms govern, not this file. No paper PDFs are distributed
+    here.
+
+  * Model weights carry their own licences from their respective publishers
+    and are not distributed in this repository.
+
+  * Third-party dependencies retain their own licences.
