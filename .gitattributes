@@ -1,0 +1,13 @@
+# Normalise line endings so Windows and Linux contributors produce identical diffs.
+* text=auto eol=lf
+
+# Binary assets: never convert, never diff as text.
+*.png     binary
+*.jpg     binary
+*.pdf     binary
+*.pptx    binary
+*.parquet binary
+*.gguf    binary
+
+# Generated diagrams. Keep them out of diff review; regenerate from the mermaid source.
+*.svg linguist-generated=true
