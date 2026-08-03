@@ -78,15 +78,17 @@ Gaps live **here**, not in their own screen, and that placement is the point. A 
 Beside every answer, and especially beside every "nothing found":
 
 ```text
-MUFASA corpus v1 · 214 papers · materials engineering
-2005–2024 · Nigeria, Ghana, Cameroon · built 12 Aug 2026
+MUFASA corpus v1 · 6,000 papers · 20 fields
+2005–2024 · Africa-relevant · built 12 Aug 2026
 ```
+
+Show the count actually loaded, not the 6,000 target — rights exclusions and parse failures will put it lower — and let the panel break it down by field, since a corpus strong in materials and thin elsewhere should say so.
 
 When there is no evidence, the answer reads:
 
-> "No verified matching evidence in MUFASA corpus v1 (214 papers, materials engineering, 2005–2024). The nearest related evidence is [E3]."
+> "No verified matching evidence in MUFASA corpus v1 (6,000 papers, 20 fields, 2005–2024). The nearest related evidence is [E3]."
 
-Never "nobody has studied this." Absence in a 214-paper corpus is not absence in the literature, and a judge will ask.
+Never "nobody has studied this." A 6,000-paper corpus is still a capped selection from 155,825 candidates; absence in it is not absence in the literature, and a judge will ask.
 
 ## Confidence, shown plainly
 
@@ -158,7 +160,7 @@ Ship a file listing hashes for everything, and show the corpus version in the UI
 
 ```text
 mufasa.Q4_K_M.gguf     sha256:...
-mufasa-graph/          sha256:...   corpus_v1, 214 papers
+mufasa-graph/          sha256:...   corpus_v1, 6,000 papers, 20 fields
 embedding-model/       sha256:...
 prompts/system.txt     sha256:...
 ladybug                version + wheel hash
@@ -197,7 +199,7 @@ Also due for Gate 1: the public repo on the ADTC template, `REPORT.md` with **me
 
 ## The demo
 
-First run the Tauri desktop with all networking disabled. Ask a hard question in your flagship domain. Evidence cards appear in about a second. Click one and read the exact sentence, its page and its study family. Open Compare and show three studies agreeing and one disagreeing, with the differing condition named. Then ask something the corpus does not cover, and watch it say precisely that — corpus v1, 214 papers, this date range — instead of inventing an answer.
+First run the Tauri desktop with all networking disabled. Ask a hard question in your flagship domain. Evidence cards appear in about a second. Click one and read the exact sentence, its page and its study family. Open Compare and show three studies agreeing and one disagreeing, with the differing condition named. Then ask a question that crosses fields, which the 6,000-paper graph now supports. Finally ask something the corpus does not cover, and watch it say precisely that — corpus v1, 6,000 papers, this date range — instead of inventing an answer.
 
 For the mobile path, keep the internet disconnected, enable the laptop's private hotspot and **Share on local Wi-Fi**, pair the phone, and repeat a short Ask/Compare flow. Turn sharing off and show that the session is immediately revoked. The desktop path remains fully usable throughout.
 

@@ -86,15 +86,18 @@ The data work has classified metadata; PDFs are not downloaded yet. The plan ref
 
 | | Gate 1 | Later |
 |---|---|---|
-| Training corpus | The wider classified set | Grows |
-| **Retrieval graph** | **~200 rights-cleared, well-parsed papers in one flagship domain** | More domains |
+| Training corpus | The full selected set — 6,000 papers | Grows |
+| **Retrieval graph** | **The same 6,000 rights-cleared papers, across all 20 fields** | Grows with the corpus |
+| Depth focus | One flagship domain: alias list, evaluation set, demo | More domains |
 | Languages | One African language, tested end to end | More |
 | Graph queries | One hop, occasionally two | Deeper |
 | Coverage claims | Scoped to the corpus, always | Unchanged — this is permanent |
 
-200 well-parsed papers answering three questions perfectly beats 6,000 badly parsed ones answering vaguely. The graph must be load-bearing, and it cannot be load-bearing if the extraction underneath it is thin.
+**One corpus, two products.** The 6,000 selected papers are parsed once and feed both the training datasets and the evidence graph, which is what makes the required cross-disciplinary integration real: a question can cross from materials into agriculture and still land on cited evidence.
 
-**Deferred deliberately:** community summaries, automatic novelty claims, automatic detection of duplicate experiments across publications, deep traversal, learned rerankers, multiple languages, speculative queries while the user types.
+The cost is that extraction quality must hold across 6,000 papers and 20 fields, and a badly parsed graph is worse than a small one — it looks complete while returning wrong numbers. So the quality gate is **per field**: sample and human-check each field, and drop a field rather than ship it thin. The graph must be load-bearing, and it cannot be load-bearing if the extraction underneath it is thin.
+
+**Deferred deliberately:** community summaries, automatic novelty claims, deep traversal, learned rerankers, multiple languages, speculative queries while the user types.
 
 ## What ships
 
@@ -108,7 +111,7 @@ extensions/            Ladybug fts and vector binaries, bundled for offline use
 MANIFEST.sha256        hashes for all of the above, plus corpus version
 ```
 
-**No PDFs.** Every claim carries its sentence, page and study family — a couple of megabytes for 200 papers, against 300 MB of documents. It shows instantly, and it avoids redistributing papers you may not have the right to redistribute.
+**No PDFs.** Every claim carries its sentence, page and study family — about 60 MB of spans for 6,000 papers, against roughly 9 GB of documents, which is more than the whole memory ceiling. It shows instantly, and it avoids redistributing papers you may not have the right to redistribute. The graph package itself lands at roughly **600–900 MB**, alongside the model rather than inside it.
 
 The bundled `extensions/` folder is not optional. Ladybug downloads its full-text and vector extensions over the internet on first use; on an offline machine that fails. Install once with internet, bundle the binaries, then verify the primary desktop path with all networking disabled.
 
@@ -145,7 +148,7 @@ flowchart TB
 
     L2["<b>Layer 2 - Model Engineering</b><br/>Reasoning datasets, fine-tuning, preference tuning<br/>Candidates scored on the total formula,<br/>not on scientific quality alone"]:::train
 
-    L3["<b>Layer 3 - GraphRAG, build half</b><br/>About 200 papers in one flagship domain<br/>Observation nodes in a Ladybug graph<br/>Full-text and vector indexes, extensions bundled"]:::process
+    L3["<b>Layer 3 - GraphRAG, build half</b><br/>The same 6,000 papers, across 20 fields<br/>Observation nodes in a Ladybug graph<br/>Full-text and vector indexes, extensions bundled"]:::process
 
     GATE{"<b>Ready to ship?</b><br/>Extraction sampled and human-checked<br/>Model beats the untouched base<br/>Desktop verified with all networking off"}:::gate
 
