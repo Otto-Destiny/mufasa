@@ -38,3 +38,9 @@ Large corpora, PDFs, generated partitions, model weights and runtime databases a
 ## Contributing
 
 Changes are proposed from a prefixed branch and reviewed through a pull request; `main` is never a working branch. See [CONTRIBUTING.md](./CONTRIBUTING.md).
+
+## Licence
+
+Apache License 2.0 — see [LICENSE](./LICENSE).
+
+The licence covers this repository's code, documentation and schemas. It does not extend to the scientific papers MUFASA processes, which stay under their publishers' terms and are tracked per paper in the rights ledger, or to model weights, which carry their own licences. Neither is distributed here. See [NOTICE](./NOTICE).
