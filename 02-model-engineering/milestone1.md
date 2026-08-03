@@ -53,60 +53,73 @@ sudo sensors-detect --auto     # enables CPU temperature reading
 
 Start with these two. They bracket the size range we're choosing between.
 
-Three candidates. They are deliberately different bets: one conventional small model, and two extreme-quantisation 8B models that trade weight precision for size.
+Four candidates: two conventional small models, and two extreme-quantisation 8B models that trade weight precision for size.
 
-| # | Model | Format | File size | Expect peak RAM |
+| # | Model | Quant | File size | Expect peak RAM |
 |---|---|---|---|---|
 | 1 | **Nanbeige4.2-3B** | `Q4_K_M` | 2.68 GB | ~3.0–3.2 GB |
-| 2 | **Bonsai-8B** (1-bit) | `Q1_0` | ~1.2 GB | ~1.6–2.0 GB |
-| 3 | **Ternary-Bonsai-8B** | `Q2_0` | 2.03 GB | ~2.4–2.8 GB |
+| 2 | **Qwen3.5-4B** | `Q4_K_M` | 2.74 GB | ~3.1–3.3 GB |
+| 3 | **Bonsai-8B** (1-bit) | `Q1_0` | 1.16 GB | ~1.6–2.0 GB |
+| 4 | **Ternary-Bonsai-8B** | `Q2_0` | 2.18 GB | ~2.5–2.9 GB |
 
-**1 — Nanbeige4.2-3B** · https://huggingface.co/bartowski/Nanbeige_Nanbeige4.2-3B-GGUF
-Despite the name it is ~4B total parameters (3B non-embedding). Uses a Looped Transformer, which reuses layers to add capacity without adding parameters. Reported to beat Qwen3.5-9B and Gemma4-12B on reasoning.
+### Direct download links
 
-**2 — Bonsai-8B, 1-bit** · https://huggingface.co/prism-ml/Bonsai-8B-gguf
-Qwen3-8B architecture with weights squeezed to {−1, +1}. Reported benchmark average **70.5**.
+Exact files — nothing to search for, nothing to guess:
 
-**3 — Ternary-Bonsai-8B** · https://huggingface.co/prism-ml/Ternary-Bonsai-8B-gguf
+```bash
+mkdir -p ~/mufasa/models && cd ~/mufasa/models
+
+# 1. Nanbeige4.2-3B  (2.68 GB)
+wget https://huggingface.co/bartowski/Nanbeige_Nanbeige4.2-3B-GGUF/resolve/main/Nanbeige_Nanbeige4.2-3B-Q4_K_M.gguf
+
+# 2. Qwen3.5-4B  (2.74 GB)
+wget https://huggingface.co/unsloth/Qwen3.5-4B-GGUF/resolve/main/Qwen3.5-4B-Q4_K_M.gguf
+
+# 3. Bonsai-8B, 1-bit  (1.16 GB)
+wget https://huggingface.co/prism-ml/Bonsai-8B-gguf/resolve/main/Bonsai-8B-Q1_0.gguf
+
+# 4. Ternary-Bonsai-8B  (2.18 GB)
+wget https://huggingface.co/prism-ml/Ternary-Bonsai-8B-gguf/resolve/main/Ternary-Bonsai-8B-Q2_0.gguf
+```
+
+Or with the Hugging Face CLI, which resumes cleanly if a download drops:
+
+```bash
+pip install -U "huggingface_hub[cli]"
+
+hf download bartowski/Nanbeige_Nanbeige4.2-3B-GGUF Nanbeige_Nanbeige4.2-3B-Q4_K_M.gguf --local-dir .
+hf download unsloth/Qwen3.5-4B-GGUF              Qwen3.5-4B-Q4_K_M.gguf              --local-dir .
+hf download prism-ml/Bonsai-8B-gguf              Bonsai-8B-Q1_0.gguf                 --local-dir .
+hf download prism-ml/Ternary-Bonsai-8B-gguf      Ternary-Bonsai-8B-Q2_0.gguf         --local-dir .
+```
+
+Roughly 8.8 GB in total. Check each file's size against the table before running anything — a truncated download fails in confusing ways.
+
+### What each one is
+
+**1 — Nanbeige4.2-3B** · [repo](https://huggingface.co/bartowski/Nanbeige_Nanbeige4.2-3B-GGUF)
+Despite the name it is ~4B total parameters (3B non-embedding). Uses a Looped Transformer, reusing layers to add capacity without adding parameters. Reported to beat Qwen3.5-9B and Gemma4-12B on reasoning. **This is the one we plan to fine-tune**, so its numbers matter most.
+
+**2 — Qwen3.5-4B** · [repo](https://huggingface.co/unsloth/Qwen3.5-4B-GGUF)
+The conventional baseline at the same size class. Note this is Qwen **3.5**, not 3.6 — the 3.6 series only ships a 27B dense model and a 35B MoE, both far past our 7 GB ceiling, so 3.5 is the newest Qwen at a usable size.
+
+**3 — Bonsai-8B, 1-bit** · [repo](https://huggingface.co/prism-ml/Bonsai-8B-gguf)
+Qwen3-8B architecture with weights squeezed to {−1, +1}. Reported benchmark average **70.5**. Smallest file of the four by some margin.
+
+**4 — Ternary-Bonsai-8B** · [repo](https://huggingface.co/prism-ml/Ternary-Bonsai-8B-gguf)
 Same 8.19B Qwen3-8B base, but weights are {−1, **0**, +1} — about 1.71 bits each once the FP16 group scales are counted. That extra zero is worth **5 points**: reported average **75.5**, ranking 2nd among all compared models at roughly a ninth of their size.
+
+That repo also holds `Ternary-Bonsai-8B-F16.gguf` (16 GB) and two variants, `PQ2_0` and `Q2_0_g64`. Ignore all three — `Q2_0` is the one to measure, and F16 is only the re-quantisation source.
 
 > ⚠ **Ternary will not run on stock llama.cpp.** PrismML's own documentation: *"Ternary (`Q2_0`) needs the PrismML fork (`prism` branch) or its pre-built binaries; stock builds cannot run it."* 1-bit (`Q1_0`) **is** merged upstream and runs on normal builds.
 >
 > This matters more than its benchmark score. The judges download our `.gguf` and run it in **LM Studio or Ollama**, which ship stock llama.cpp — so a ternary submission would fail to load and score zero. Benchmark it anyway, because the numbers tell us what we are giving up, but treat it as ruled out for shipping unless upstream support lands and reaches those tools before 25 August. See Task 3 for building the fork.
 
-Easiest by browser: open a link, click **Files**, download the quant. From the terminal:
+Verify all four arrived intact before benchmarking anything:
 
 ```bash
-pip install -U "huggingface_hub[cli]"
-mkdir -p ~/mufasa/models && cd ~/mufasa/models
+ls -la --block-size=M ~/mufasa/models/*.gguf
 ```
-
-Repos differ on capitalisation and on how they split large files, so list what's there before downloading:
-
-```bash
-python3 -c "
-from huggingface_hub import list_repo_files
-for repo in ['bartowski/Nanbeige_Nanbeige4.2-3B-GGUF',
-             'prism-ml/Bonsai-8B-gguf',
-             'prism-ml/Ternary-Bonsai-8B-gguf']:
-    print('==', repo)
-    for f in list_repo_files(repo):
-        if f.endswith('.gguf'):
-            print('  ', f)
-"
-```
-
-Then pull the exact filenames — `Q4_K_M` for Nanbeige, and for the Bonsai models whichever single quant each repo ships:
-
-```bash
-hf download bartowski/Nanbeige_Nanbeige4.2-3B-GGUF <exact-filename>.gguf --local-dir .
-hf download prism-ml/Bonsai-8B-gguf <exact-filename>.gguf --local-dir .
-hf download prism-ml/Ternary-Bonsai-8B-gguf <exact-filename>.gguf --local-dir .
-```
-
-Ignore any `F16` file in the Bonsai repos — that is the 16 GB re-quantisation source, not something to benchmark.
-
-If a quant is split across parts, take all of them — llama.cpp loads the first and finds the rest.
 
 ---
 
@@ -124,7 +137,7 @@ cmake --build build --config Release -j$(nproc)
 
 That gives you `llama-cli`, `llama-server` and `llama-bench` in `build/bin/`.
 
-**This stock build runs models 1 and 2 only.** For Ternary-Bonsai-8B you also need PrismML's fork, which adds the `Q2_0` type:
+**This stock build runs models 1, 2 and 3.** Only Ternary-Bonsai-8B needs PrismML's fork, which adds the `Q2_0` type:
 
 ```bash
 cd ~/mufasa
@@ -211,6 +224,7 @@ Record the highest core temperature you see.
 | Model | Quant | pp (tok/s) | tg (tok/s) | Peak RAM (MB) | Peak temp (°C) |
 |---|---|---|---|---|---|
 | Nanbeige4.2-3B | `Q4_K_M` | | | | |
+| Qwen3.5-4B | `Q4_K_M` | | | | |
 | Bonsai-8B | `Q1_0` | | | | |
 | Ternary-Bonsai-8B | `Q2_0` | | | | |
 
@@ -228,7 +242,7 @@ There's real room inside llama.cpp: thread count, context length, batch size, qu
 
 The scoring formula is `0.50 × accuracy + 0.30 × speed + 0.20 × efficiency − thermal penalty`, so a smaller, faster model can beat a larger, smarter one. Your measurements are the first real data we have on any of this.
 
-The three candidates are asking a real question: **can extreme quantisation give us 8B-class reasoning inside a 3B-class footprint?** Ternary Bonsai claims exactly that — 8.19B parameters in 2.03 GB. If the numbers hold up it is the better model on paper.
+The four candidates are asking a real question: **can extreme quantisation give us 8B-class reasoning inside a 3B-class footprint?** Ternary Bonsai claims exactly that — 8.19B parameters in 2.18 GB, smaller than either 4B model. Qwen3.5-4B and Nanbeige are the control: conventional models at the size we would otherwise ship.
 
 Two things constrain the answer, and both need your read:
 
