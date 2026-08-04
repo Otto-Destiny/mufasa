@@ -170,13 +170,14 @@ You don't need to tune or measure the model itself — that's the model-engineer
 
 ## 4. Load the test papers, claims and questions
 
-Three things coming to you by Google Drive:
+Download the source PDFs from Google Drive. The three JSONL files are version-controlled in this repository:
 
-- **`papers/`** — the source PDFs, open-access only
-- **`claims.jsonl`** — what was extracted from them, one claim per line
-- **`questions.jsonl`** — the test questions, with the claims each one should find
+- **Source PDFs (`papers/`)** — [download the ten test PDFs from Google Drive](https://drive.google.com/drive/folders/1I_zHPKlfBvH70H3hLBWMS2mB5ItUFOAX?usp=sharing)
+- **Paper catalogue** — [`03-retrieval/milestone1-test-data/papers.jsonl`](./milestone1-test-data/papers.jsonl)
+- **Extracted claims** — [`03-retrieval/milestone1-test-data/claims.jsonl`](./milestone1-test-data/claims.jsonl), one claim per line
+- **Test questions and gold answers** — [`03-retrieval/milestone1-test-data/questions.jsonl`](./milestone1-test-data/questions.jsonl)
 
-> **Drive link:** _(to be filled in)_
+All three JSONL files are together in [`03-retrieval/milestone1-test-data/`](./milestone1-test-data/).
 
 You don't need to write the questions — they come with known answers already attached, so you can score retrieval automatically instead of eyeballing it.
 

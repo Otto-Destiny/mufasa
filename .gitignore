@@ -24,7 +24,6 @@ venv/
 **/target/
 
 # Local data-engineering workspaces and generated outputs
-/01-data-engineering/data-extraction/
 **/raw/
 **/downloads/
 **/artifacts/
@@ -36,6 +35,20 @@ venv/
 **/batches/
 **/states/
 *.log
+
+# data-extraction holds source and data side by side. Track the source,
+# never the data. Ignore the whole tree, then re-admit what belongs in Git.
+# The directory line matters: Git will not descend into an excluded
+# directory, so without it the scripts under classification_output/ and
+# openalex_ng_science_2000_2026/ would stay invisible.
+/01-data-engineering/data-extraction/**
+!/01-data-engineering/data-extraction/**/
+!/01-data-engineering/data-extraction/**/*.py
+!/01-data-engineering/data-extraction/*.md
+# Re-ignore vendored dependencies. The negation above is a later rule than
+# the global node_modules line, so without this it drags in every bundled
+# .py from pnpm and node-gyp.
+/01-data-engineering/data-extraction/**/node_modules/
 
 # Large model, document, database, and index artifacts
 *.gguf
