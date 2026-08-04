@@ -4,6 +4,23 @@
 
 MUFASA is an offline African scientific-reasoning project being developed for constrained, affordable hardware. It combines a compact language model with evidence-grounded retrieval so that scientific answers can remain useful, inspectable and locally relevant without depending on cloud inference.
 
+### Full context (start here anytime)
+
+**[CONTEXT.md](./CONTEXT.md)** — single always-on brief for the team. Open it for strategy, compliance, and “why are we building this?” questions.
+
+It covers:
+
+- ADTC rules, hardware, scoring, gates, GGUF / llama.cpp, submission format  
+- Domain (**Math & Scientific Reasoning**) + example prompts  
+- What **African science** is, why global AI alone is not enough, BS-standards vs local papers  
+- Whether the need is real / what already exists  
+- Example African papers from the materials catalog  
+- Model vs GraphRAG score weight; load-bearing integration  
+- Desktop (Tauri ↔ localhost FastAPI ↔ llama.cpp), optional phone, how the app is submitted  
+- EagleTeam briefing notes and FAQ  
+
+Layer design detail still lives in [system-architecture.md](./system-architecture.md) and the `01`–`04` folders.
+
 ![MUFASA four-layer architecture](./images/system-architecture.svg)
 
 ## Four layers
@@ -27,7 +44,7 @@ Built for **The Laptop LLM Challenge** (African Deep Tech Challenge 2026).
 
 Judging runs on a fixed envelope: Ubuntu 22.04, Intel i5, 8 GB RAM, **7 GB peak RSS ceiling**, no internet, llama.cpp with GGUF only. Exceeding the memory ceiling or reaching the network during evaluation scores zero. Scoring is `0.50 × accuracy + 0.30 × speed + 0.20 × efficiency − thermal penalty`.
 
-Historical discussions and exploratory decisions are preserved in [conversations.md](./conversations.md); reviewed layer documents take precedence where they differ.
+For a single always-on brief of competition + project context, use [CONTEXT.md](./CONTEXT.md). Historical discussions are in [conversations.md](./conversations.md); reviewed layer documents take precedence where they differ.
 
 ## Current status
 
