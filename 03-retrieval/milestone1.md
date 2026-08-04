@@ -98,14 +98,28 @@ https://huggingface.co/bartowski/Nanbeige_Nanbeige4.2-3B-GGUF
 **Qwen3 1.7B:**
 https://huggingface.co/Qwen/Qwen3-1.7B-GGUF
 
-Take the `Q4_K_M` build of each — that's the quantisation we plan to ship.
+**Optional lightweight test model — Qwen3.5 0.8B:**
+https://huggingface.co/ggml-org/Qwen3.5-0.8B-GGUF
 
-| Model | `Q4_K_M` file | Expect peak RAM |
+Use its `Q4_0` GGUF (about 563 MB). It runs in a current standard llama.cpp build without any custom runtime. This is useful for testing the smallest practical offline configuration; allow roughly 1–2 GB of working RAM at a 4K context.
+
+**Optional smallest model — Gemma 3 270M Instruct:**
+https://huggingface.co/ggml-org/gemma-3-270m-it-GGUF
+
+Take the `Q8_0` GGUF (292 MB). At 270M parameters, heavier quantisation saves almost nothing — the whole file is under 300 MB either way — so `Q8_0` is the sensible choice and stays close to full precision. Note that most of those parameters are the 262k-token embedding table rather than the transformer itself, which is why the file doesn't shrink the way you'd expect.
+
+Its answers will be noticeably worse than the others. That's fine and it's the point: it starts in about a second and leaves the machine almost entirely free, so it's the fastest way to iterate on retrieval code without waiting on generation. It's also a useful lower bound — if retrieval brings back the right evidence, a 270M model should still be able to quote it back correctly. When it can't, that usually means retrieval handed it the wrong thing.
+
+For Nanbeige and Qwen3-1.7B, take the `Q4_K_M` build — that's the quantisation we plan to ship. For the optional Qwen3.5-0.8B test, take `Q4_0`. For the optional Gemma 3 270M test, take `Q8_0`.
+
+| Model | Suggested GGUF file | Expect peak RAM |
 |---|---|---|
 | Nanbeige4.2-3B | 2.68 GB | ~3.0–3.2 GB |
 | Qwen3-1.7B | ~1.1 GB | ~1.4–1.6 GB |
+| Qwen3.5-0.8B (`Q4_0`) | ~563 MB | ~1–2 GB at 4K context |
+| Gemma 3 270M Instruct (`Q8_0`) | 292 MB | ~0.6–1.0 GB at 4K context |
 
-Get both. Despite its name Nanbeige "3B" is really ~4B parameters and wants about twice the RAM of our eventual model — useful for feeling a tight machine. Qwen3-1.7B is nearer what we'll ship, so tune against that one.
+Get the two main stand-ins. Despite its name Nanbeige "3B" is really ~4B parameters and wants about twice the RAM of our eventual model — useful for feeling a tight machine. Qwen3-1.7B is nearer what we'll ship, so tune against that one. Qwen3.5-0.8B is an optional lightweight comparison. Gemma 3 270M is the optional smallest one — reach for it when you want a fast edit-run loop rather than a realistic answer.
 
 With a 1.7B the laptop budget is roughly: 1.5 GB model + 0.5 GB retrieval + 1.5 GB for Ubuntu and the app ≈ 3.5 GB of the 7 GB. More headroom than you'd think — worth knowing before optimising for memory.
 
@@ -130,7 +144,17 @@ Then pull the exact filename you want:
 ```bash
 hf download bartowski/Nanbeige_Nanbeige4.2-3B-GGUF <exact-filename>.gguf --local-dir .
 hf download Qwen/Qwen3-1.7B-GGUF <exact-filename>.gguf --local-dir .
+hf download ggml-org/Qwen3.5-0.8B-GGUF Qwen3.5-0.8B-Q4_0.gguf --local-dir .
+hf download ggml-org/gemma-3-270m-it-GGUF gemma-3-270m-it-Q8_0.gguf --local-dir .
 ```
+
+Gemma 3 270M is small enough to just fetch directly:
+
+```bash
+wget https://huggingface.co/ggml-org/gemma-3-270m-it-GGUF/resolve/main/gemma-3-270m-it-Q8_0.gguf
+```
+
+If that repo is ever unavailable, [`unsloth/gemma-3-270m-it-GGUF`](https://huggingface.co/unsloth/gemma-3-270m-it-GGUF) carries the same `Q8_0` quantisation under the same filename (same weights, marginally different GGUF metadata).
 
 Confirm the file size roughly matches the table above. If a repo splits a quant across several parts, take all of them — llama.cpp loads the first and finds the rest.
 
