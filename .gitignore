@@ -74,3 +74,7 @@ venv/
 Thumbs.db
 desktop.ini
 ~$*
+
+# Private working notes. Anything named *.local.md stays on the machine that
+# wrote it - raw discussion, half-formed ideas, notes not meant for the repo.
+*.local.md
