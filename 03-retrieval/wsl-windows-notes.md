@@ -119,6 +119,118 @@ cd /mnt/c/Users/hp/Desktop/Mufasa/03-retrieval/retrieval-v1 && python3 evaluate.
 
 ---
 
+## Milestone 1 setup, translated for a Windows terminal
+
+[milestone1.md](./milestone1.md) gives every setup command as if you're
+already typing inside a WSL/Ubuntu shell. If you're running from a Windows
+terminal instead, here is each of those commands with its actual
+Windows-invoked equivalent, task by task. Copy-paste these directly.
+
+### Task 1 — set up the machine
+
+The install commands use `sudo`, which needs a password prompt — per the
+section below, **these cannot be run through a script from Windows at all.**
+Open a real WSL shell first:
+
+```bash
+wsl -d Ubuntu-22.04
+```
+
+That drops you into an interactive Ubuntu shell. From there, run
+milestone1.md's commands exactly as written:
+
+```bash
+sudo apt update
+sudo apt install -y build-essential cmake git python3 python3-pip python3-venv \
+                    lm-sensors time curl
+sudo sensors-detect --auto
+```
+
+Once that's done, you can go back to driving things from Windows for
+everything else. Checking the Python version, for example, has no
+quotes/variables, so it's safe to run directly without a script file:
+
+```bash
+MSYS_NO_PATHCONV=1 wsl -d Ubuntu-22.04 -- python3 --version
+```
+
+### Task 2 — download the stand-in model
+
+milestone1.md's download commands include quoted Python one-liners and
+`hf download` calls — exactly the kind of thing that breaks crossing the
+Windows/WSL boundary. Use a script file:
+
+```bash
+# download_model.sh
+#!/bin/bash
+pip install -U "huggingface_hub[cli]"
+mkdir -p ~/mufasa/models && cd ~/mufasa/models
+
+# list exact filenames before downloading (repos vary in capitalisation):
+python3 -c "from huggingface_hub import list_repo_files; \
+print('\n'.join(f for f in list_repo_files('bartowski/Nanbeige_Nanbeige4.2-3B-GGUF') if f.endswith('.gguf')))"
+
+# then pull the exact filenames you found above:
+hf download bartowski/Nanbeige_Nanbeige4.2-3B-GGUF <exact-filename>.gguf --local-dir .
+hf download Qwen/Qwen3-1.7B-GGUF <exact-filename>.gguf --local-dir .
+```
+
+```bash
+MSYS_NO_PATHCONV=1 wsl -d Ubuntu-22.04 -- bash "/mnt/c/path/to/download_model.sh"
+```
+
+The Gemma 3 270M stand-in is small enough to fetch directly with `wget` —
+no variables or nested quotes, so this one's safe to run inline without a
+script file:
+
+```bash
+MSYS_NO_PATHCONV=1 wsl -d Ubuntu-22.04 -- bash -c 'mkdir -p ~/mufasa/models && cd ~/mufasa/models && wget https://huggingface.co/ggml-org/gemma-3-270m-it-GGUF/resolve/main/gemma-3-270m-it-Q8_0.gguf'
+```
+
+### Task 3 — install llama.cpp and run the model
+
+Cloning and building is fine to run directly (no `.sh` file needed) — but
+note the **single quotes** around the whole command. The build step takes
+several minutes — see "Long-running commands" below for how to check
+progress without blocking:
+
+```bash
+MSYS_NO_PATHCONV=1 wsl -d Ubuntu-22.04 -- bash -c 'cd ~/mufasa && git clone https://github.com/ggml-org/llama.cpp && cd llama.cpp && cmake -B build && cmake --build build --config Release -j$(nproc)'
+```
+
+That command contains `$(nproc)`. **Single quotes matter here**: with
+double quotes, the *outer* Windows shell would try to expand `$(nproc)`
+itself before the command ever reaches WSL — and `nproc` isn't even a
+Windows command, so it would fail or expand to nothing. Single quotes stop
+the outer shell from touching anything inside, so `$(nproc)` only gets
+evaluated once, correctly, by the *inner* Linux shell. Same rule as the
+`.sh`-file fix above, just in miniature: **when a command has any `$` in
+it, wrap the whole thing in single quotes**, whether it's a whole script
+file or one inline `bash -c '...'`.
+
+Running the model, though, has a quoted multi-word prompt — use a script
+file:
+
+```bash
+# test_model.sh
+#!/bin/bash
+cd ~/mufasa/llama.cpp
+./build/bin/llama-cli \
+  -m ~/mufasa/models/<your-model>.gguf \
+  -p "Explain what rice husk ash is used for in concrete." \
+  -n 128 -t 4 -c 2048 --no-warmup --single-turn --simple-io
+```
+
+```bash
+MSYS_NO_PATHCONV=1 wsl -d Ubuntu-22.04 -- bash "/mnt/c/path/to/test_model.sh"
+```
+
+Note the two extra flags (`--single-turn --simple-io`) added to
+milestone1.md's original example — without them this hangs when run from a
+script. See "`llama.cpp` gotchas" below for why.
+
+---
+
 ## Commands that need a password (`sudo ...`)
 
 **Don't try to run these through an automated tool at all.** There's no
@@ -210,3 +322,4 @@ since the server just sits and waits for requests.
 | Run a Python script directly (fine — no quoting risk) | `MSYS_NO_PATHCONV=1 wsl -d Ubuntu-22.04 -- python3 "/mnt/c/path/to/script.py"` |
 | Check a package is installed | `wsl -d Ubuntu-22.04 -- dpkg -l <pkg>` (look for `ii` not `un`) |
 | Anything needing a password | Run by hand in a real WSL terminal — never through a script |
+| Milestone 1's setup commands, Windows-ready | See "Milestone 1 setup, translated for a Windows terminal" above |
