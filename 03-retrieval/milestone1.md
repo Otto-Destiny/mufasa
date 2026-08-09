@@ -73,6 +73,8 @@ Everything outside these boxes is yours to redesign.
 
 Judging happens on **Ubuntu 22.04, Intel i5, 8 GB RAM, integrated graphics**. Getting close to that matters more than getting it exact — a VM or a spare laptop is fine. Windows + WSL2 is fine for day-to-day work, but numbers you report should come from real Ubuntu, since RAM accounting and thermal behaviour both differ under WSL.
 
+If you're driving WSL from a Windows terminal (rather than working inside the WSL shell directly), see [wsl-windows-notes.md](./wsl-windows-notes.md) first — command quoting breaks in non-obvious ways crossing that boundary, and it covers the fixes so you don't have to rediscover them.
+
 ```bash
 sudo apt update
 sudo apt install -y build-essential cmake git python3 python3-pip python3-venv \
