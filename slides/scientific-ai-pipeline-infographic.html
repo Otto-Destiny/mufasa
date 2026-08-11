@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>MUFASA — Scientific AI Pipeline Schematic</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root{
+    --bg:#03070d;
+    --panel:#0d2b4d;
+    --panel-2:#0a2340;
+    --grid-line: rgba(122,178,224,0.06);
+    --line: rgba(140,190,230,0.28);
+    --line-strong: rgba(150,200,240,0.5);
+    --cyan:#5FE1E6;
+    --cyan-soft:#9fdfe6;
+    --amber:#F2A65A;
+    --paper:#EAF3FF;
+    --muted:#8DA6C4;
+    --sans:'Segoe UI',system-ui,-apple-system,Roboto,sans-serif;
+    --mono:ui-monospace,'SF Mono',Menlo,Consolas,'Liberation Mono',monospace;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(ellipse at 20% 0%, #0a1830 0%, transparent 55%),
+      var(--bg);
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:22px;
+    font-family:var(--mono);
+  }
+
+  .stage-outer{
+    width:min(100vw - 44px, 177.78vh - 44px, 1560px);
+    container-type: inline-size;
+  }
+
+  .slide{
+    position:relative;
+    aspect-ratio:16/9;
+    width:100%;
+    background:var(--panel);
+    border:1px solid rgba(150,200,240,0.35);
+    border-radius:6px;
+    box-shadow:
+      0 30px 80px -20px rgba(0,0,0,0.7),
+      0 0 0 6px rgba(4,10,20,0.4);
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+    padding: 3cqi 3.4cqi 2.4cqi 3.4cqi;
+    background-image:
+      repeating-linear-gradient(0deg, var(--grid-line) 0px, var(--grid-line) 1px, transparent 1px, transparent 30px),
+      repeating-linear-gradient(90deg, var(--grid-line) 0px, var(--grid-line) 1px, transparent 1px, transparent 30px);
+  }
+
+  /* corner registration marks */
+  .corner{position:absolute; width:20px; height:20px; z-index:5;}
+  .corner::before,.corner::after{content:'';position:absolute;background:var(--line-strong);}
+  .corner::before{width:100%;height:1px;top:50%;left:0;}
+  .corner::after{width:1px;height:100%;left:50%;top:0;}
+  .tl{top:13px;left:13px;} .tr{top:13px;right:13px;} .bl{bottom:13px;left:13px;} .br{bottom:13px;right:13px;}
+
+  /* ---------- header ---------- */
+  .head{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    gap:2cqi;
+    flex:0 0 auto;
+  }
+  .eyebrow{
+    font-size:0.98cqi;
+    letter-spacing:0.15em;
+    color:var(--cyan);
+    text-transform:uppercase;
+    margin-bottom:0.8cqi;
+    font-weight:600;
+  }
+  h1{
+    margin:0;
+    font-family:var(--sans);
+    font-weight:700;
+    font-size:3.15cqi;
+    line-height:1.02;
+    color:var(--paper);
+    letter-spacing:-0.02em;
+  }
+  .subtitle{
+    font-size:1.0cqi;
+    letter-spacing:0.03em;
+    color:var(--muted);
+    margin-top:0.7cqi;
+  }
+  .flow-summary{
+    font-size:1.0cqi;
+    letter-spacing:0.1em;
+    color:var(--muted);
+    text-transform:uppercase;
+    text-align:right;
+    white-space:nowrap;
+  }
+  .flow-summary b{color:var(--cyan); font-weight:700;}
+  .flow-summary .sep{color:var(--line-strong); margin:0 0.35em;}
+
+  .hairline{
+    height:1px;
+    background:linear-gradient(90deg, var(--line-strong), transparent 88%);
+    margin: 1.7cqi 0 0.6cqi 0;
+    flex:0 0 auto;
+  }
+
+  /* ---------- body / rail ---------- */
+  .body{
+    flex:1 1 auto;
+    min-height:0;
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+    padding-left:3cqi;
+    border-left:1px solid var(--line-strong);
+    margin-top:0.9cqi;
+  }
+
+  .phase-row{
+    display:flex;
+    align-items:stretch;
+    gap:2cqi;
+    flex:1 1 0;
+    min-height:0;
+    padding:1cqi 0;
+  }
+  .phase-row + .phase-row{ border-top:1px dashed rgba(140,190,230,0.16); }
+
+  .phase-label{
+    flex:0 0 20cqi;
+    display:flex;
+    align-items:center;
+    gap:1.3cqi;
+    position:relative;
+  }
+  .phase-label::before{
+    content:'';
+    position:absolute;
+    left:-3cqi;
+    top:50%;
+    width:3cqi;
+    height:1px;
+    background:var(--line-strong);
+  }
+  .badge{
+    flex:0 0 4.4cqi;
+    width:4.4cqi;
+    height:4.4cqi;
+    border-radius:50%;
+    border:1.5px solid var(--cyan);
+    background:var(--panel-2);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:700;
+    font-size:1.55cqi;
+    color:var(--cyan);
+  }
+  .phase-text{display:flex; flex-direction:column; gap:0.4cqi; min-width:0;}
+  .phase-title{
+    font-family:var(--sans);
+    font-weight:700;
+    font-size:1.55cqi;
+    color:var(--paper);
+    line-height:1.12;
+    letter-spacing:-0.01em;
+  }
+  .phase-caption{
+    font-size:0.94cqi;
+    letter-spacing:0.14em;
+    color:var(--muted);
+    text-transform:uppercase;
+  }
+
+  .stage-row{
+    flex:1 1 auto;
+    min-width:0;
+    display:flex;
+    align-items:stretch;      /* every chip in a row shares the tallest height */
+    gap:0.6cqi;
+    position:relative;
+  }
+  .stage-row::before{
+    content:'';
+    position:absolute;
+    left:0; right:0; top:50%;
+    height:1px;
+    background:var(--line);
+    z-index:0;
+  }
+  .chip{
+    position:relative;
+    z-index:1;
+    flex:1 1 0;
+    min-width:0;
+    min-height:5cqi;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:var(--panel);
+    border:1px solid var(--line-strong);
+    border-radius:5px;
+    padding:0.7cqi 0.6cqi;
+    font-family:var(--sans);
+    font-size:1.15cqi;
+    font-weight:600;
+    line-height:1.2;
+    color:var(--paper);
+    text-align:center;
+    letter-spacing:0.005em;
+    text-wrap:balance;
+    overflow-wrap:break-word;   /* safety net: a long word breaks, never protrudes */
+    transition:border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  /* Longer labels step down so they wrap to fewer lines and the box keeps
+     its proportions. Two steps is enough — a third would read as a mistake. */
+  .chip.sm{font-size:1.0cqi; letter-spacing:0;}
+  .chip.xs{font-size:0.9cqi; letter-spacing:0; line-height:1.25;}
+  .chip.highlight{
+    border-color:var(--amber);
+    border-width:2px;
+    background:rgba(242,166,90,0.10);
+    color:var(--amber);
+    font-weight:700;
+    animation: pulse-glow 2.6s ease-in-out infinite;
+  }
+  @keyframes pulse-glow{
+    0%, 100% { box-shadow:0 0 12px rgba(242,166,90,0.22); }
+    50% { box-shadow:0 0 26px rgba(242,166,90,0.55); }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .chip.highlight{ animation:none; box-shadow:0 0 16px rgba(242,166,90,0.3); }
+  }
+  .arrow{
+    flex:0 0 auto;
+    align-self:center;        /* the row stretches; the arrow should not */
+    z-index:1;
+    color:var(--muted);
+    font-size:1.2cqi;
+    padding:0 0.05cqi;
+  }
+
+  /* ---------- footer ---------- */
+  .foot{
+    flex:0 0 auto;
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    margin-top:1.7cqi;
+    padding-top:1.3cqi;
+    border-top:1px solid rgba(140,190,230,0.2);
+    gap:2cqi;
+  }
+  .legend{
+    font-size:0.94cqi;
+    color:var(--muted);
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    display:flex;
+    gap:2cqi;
+    flex-wrap:wrap;
+  }
+  .legend span{color:var(--paper);}
+  .legend .amber-dot{color:var(--amber); font-weight:600;}
+
+  .title-block{
+    display:grid;
+    grid-template-columns:auto auto;
+    column-gap:1.5cqi;
+    row-gap:0.3cqi;
+    font-size:0.94cqi;
+    white-space:nowrap;
+  }
+  .title-block span{color:var(--muted); letter-spacing:0.1em; text-transform:uppercase;}
+  .title-block b{color:var(--cyan-soft); font-weight:700; text-align:right;}
+
+  /* ---------- small-screen fallback ---------- */
+  @media (max-width:820px){
+    .stage-outer{width:100%;}
+    .slide{aspect-ratio:auto; padding:24px;}
+    .head{flex-direction:column; align-items:flex-start; gap:12px;}
+    .flow-summary{text-align:left;}
+    .body{padding-left:0; border-left:0;}
+    .phase-row{flex-direction:column; align-items:flex-start; gap:12px;}
+    .phase-label{flex:0 0 auto;}
+    .phase-label::before{display:none;}
+    .stage-row{flex-wrap:wrap;}
+    .stage-row::before{display:none;}
+    .chip{flex:0 0 46%;}
+    .foot{flex-direction:column; align-items:flex-start; gap:14px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="stage-outer">
+  <div class="slide">
+    <div class="corner tl"></div><div class="corner tr"></div>
+    <div class="corner bl"></div><div class="corner br"></div>
+
+    <div class="head">
+      <div>
+        <div class="eyebrow">Schematic No. SE-004 · Rev A · EagleTeam</div>
+        <h1>MUFASA</h1>
+        <div class="subtitle">Model For Understanding the Frontiers of African Scientific Advancement</div>
+      </div>
+      <div class="flow-summary">
+        DATA <span class="sep">→</span> <b>MODEL</b> <span class="sep">→</span> RETRIEVAL <span class="sep">→</span> <b>APPLICATION</b>
+      </div>
+    </div>
+
+    <div class="hairline"></div>
+
+    <div class="body">
+
+      <div class="phase-row">
+        <div class="phase-label">
+          <div class="badge">01</div>
+          <div class="phase-text">
+            <div class="phase-title">Data Engineering</div>
+            <div class="phase-caption">Input Layer</div>
+          </div>
+        </div>
+        <div class="stage-row">
+          <div class="chip">Scope</div><span class="arrow">→</span>
+          <div class="chip sm">Acquire &amp; Classify</div><span class="arrow">→</span>
+          <div class="chip">Rights Gate</div><span class="arrow">→</span>
+          <div class="chip sm">Document Engineering</div><span class="arrow">→</span>
+          <div class="chip sm">Freeze Splits</div><span class="arrow">→</span>
+          <div class="chip highlight xs">◆ Scientific Knowledge Engineering</div><span class="arrow">→</span>
+          <div class="chip sm">Create Datasets</div>
+        </div>
+      </div>
+
+      <div class="phase-row">
+        <div class="phase-label">
+          <div class="badge">02</div>
+          <div class="phase-text">
+            <div class="phase-title">Model Engineering</div>
+            <div class="phase-caption">Core Training</div>
+          </div>
+        </div>
+        <div class="stage-row">
+          <div class="chip highlight sm">◆ Benchmark Base Models</div><span class="arrow">→</span>
+          <div class="chip">SFT</div><span class="arrow">→</span>
+          <div class="chip">DPO</div><span class="arrow">→</span>
+          <div class="chip">Quantize</div><span class="arrow">→</span>
+          <div class="chip sm">Release / Packaging</div>
+        </div>
+      </div>
+
+      <div class="phase-row">
+        <div class="phase-label">
+          <div class="badge">03</div>
+          <div class="phase-text">
+            <div class="phase-title">Retrieval</div>
+            <div class="phase-caption">Knowledge Access</div>
+          </div>
+        </div>
+        <div class="stage-row">
+          <div class="chip highlight sm">◆ Vector / Graph Stores</div><span class="arrow">→</span>
+          <div class="chip sm">Embeddings</div><span class="arrow">→</span>
+          <div class="chip">Indexing</div><span class="arrow">→</span>
+          <div class="chip sm">Hybrid Retrieval</div><span class="arrow">→</span>
+          <div class="chip">Reranking</div><span class="arrow">→</span>
+          <div class="chip sm">Retrieval Evaluation</div>
+        </div>
+      </div>
+
+      <div class="phase-row">
+        <div class="phase-label">
+          <div class="badge">04</div>
+          <div class="phase-text">
+            <div class="phase-title">Application</div>
+            <div class="phase-caption">Surface Layer</div>
+          </div>
+        </div>
+        <div class="stage-row">
+          <div class="chip">Agents</div><span class="arrow">→</span>
+          <div class="chip sm">Orchestration</div><span class="arrow">→</span>
+          <div class="chip">APIs</div><span class="arrow">→</span>
+          <div class="chip">UI</div><span class="arrow">→</span>
+          <div class="chip sm">End-user Workflows</div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="foot">
+      <div class="legend">
+        <span>→ Sequential flow</span>
+        <span class="amber-dot">◆ We are here</span>
+        <span>Phase gate</span>
+      </div>
+      <div class="title-block">
+        <span>Project</span><b>MUFASA</b>
+        <span>Team</span><b>EagleTeam</b>
+        <span>Dwg No.</span><b>SE-004</b>
+        <span>Scale</span><b>N.T.S.</b>
+        <span>Rev</span><b>A · 08.2026</b>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>
