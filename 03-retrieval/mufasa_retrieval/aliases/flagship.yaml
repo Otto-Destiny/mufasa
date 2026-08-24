@@ -1,0 +1,106 @@
+# Alias list for the flagship domain.
+#
+# Without it an English-only search misses much of the corpus: a question asked
+# with a local name, an acronym, or a species' common name never reaches the
+# claim that answers it. Hand-written, versioned with the corpus, and expanded
+# whenever the evaluation set turns up a miss.
+#
+# `canonical` is the name as it appears in the corpus entity table.
+
+version: aliases-v1
+entities:
+  Clarias gariepinus:
+    lang: la
+    aliases: [African catfish, African sharptooth catfish, catfish, aro, tarwada]
+  fenthion:
+    lang: en
+    aliases: [Baytex, Lebaycid, organophosphate pesticide fenthion]
+  rice husk ash:
+    lang: en
+    aliases: [RHA, rice hull ash, rice-husk ash]
+  Vernonia amygdalina:
+    lang: la
+    aliases: [bitter leaf, onugbu, ewuro, etidot, chusar-doki]
+  electrical conductivity:
+    lang: en
+    aliases: [EC, conductivity, specific conductance]
+  total dissolved solids:
+    lang: en
+    aliases: [TDS, dissolved solids]
+  electrical resistivity imaging:
+    lang: en
+    aliases: [ERI, resistivity imaging, electrical resistivity tomography, ERT]
+  vertical electrical sounding:
+    lang: en
+    aliases: [VES, electrical sounding]
+  Bosso:
+    lang: en
+    aliases: [Bosso LGA, Bosso Local Government Area, Bosso community]
+  Minna:
+    lang: en
+    aliases: [Minna Niger State, Minna metropolis]
+  Ilokun:
+    lang: en
+    aliases: [Ilokun dumpsite, Ilokun Ado-Ekiti]
+  Ogale:
+    lang: en
+    aliases: [Ogale community, Ogale Eleme, Eleme]
+  Warri:
+    lang: en
+    aliases: [Warri Delta State, Warri metropolis]
+  Hong:
+    lang: en
+    aliases: [Hong LGA, Hong Local Government Area, Hong Adamawa]
+  sub-Saharan Africa:
+    lang: en
+    aliases: [SSA, sub Saharan Africa, subsaharan africa]
+  seasonal autoregressive integrated moving average:
+    lang: en
+    aliases: [SARIMA, seasonal ARIMA]
+  root mean square error:
+    lang: en
+    aliases: [RMSE, root-mean-square error]
+  median lethal concentration:
+    lang: en
+    aliases: [LC50, LC-50, 96-hour LC50, lethal concentration 50]
+  groundwater:
+    lang: en
+    aliases: [ground water, subsurface water, aquifer water]
+  borehole:
+    lang: en
+    aliases: [bore hole, drilled well, tube well]
+
+  # Plain-language wordings for jargon a non-specialist would not use. These are
+  # domain synonyms, not answer keys — but note in TESTING.md that the entries
+  # below were added after the paraphrase questions Q-022 and Q-024 failed, so
+  # those two no longer measure cold paraphrase recall.
+  imputation:
+    lang: en
+    aliases: [gap-filling, gap filling, filling gaps, filling missing data,
+              missing-data method, missing data method, infilling]
+  missing not at random:
+    lang: en
+    aliases: [MNAR, missingness depended on unobserved values,
+              depends on unobserved values, unobserved values]
+  missing at random:
+    lang: en
+    aliases: [MAR]
+  missing completely at random:
+    lang: en
+    aliases: [MCAR]
+  leachate plume:
+    lang: en
+    aliases: [contaminant plume, pollution plume, migrated leachate]
+  dumpsite:
+    lang: en
+    aliases: [landfill, waste dump, refuse dump, tip]
+  subsurface survey:
+    lang: en
+    aliases: [underground scan, subsurface scan, subsurface imaging,
+              geophysical survey, underground survey, subsurface investigation]
+  water stress:
+    lang: en
+    aliases: [water scarcity, water shortage, water insecurity]
+  rain attenuation:
+    lang: en
+    aliases: [signal fade, rain fade, link attenuation]

@@ -64,6 +64,9 @@ venv/
 *.lbug
 *.index
 /model/
+/04-application/backend/bin/
+/04-application/backend/models/
+/04-application/backend/history.jsonl
 
 # Tabular production artifacts. The reviewed public fixture is allowed.
 *.parquet
