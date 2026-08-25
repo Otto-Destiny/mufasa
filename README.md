@@ -2,6 +2,10 @@
 
 ### Models for Understanding the Frontiers of African Scientific Advancement
 
+[![Model](https://img.shields.io/badge/%F0%9F%A4%97%20Model-mufasa--gemma3--1b--sft--gguf-2f5d8c)](https://huggingface.co/DestinyOtto/mufasa-gemma3-1b-sft-gguf)
+[![Dataset](https://img.shields.io/badge/%F0%9F%A4%97%20Dataset-mufasa--sft--mixed-1d3a57)](https://huggingface.co/datasets/DestinyOtto/mufasa-sft-mixed)
+[![Repo](https://img.shields.io/badge/GitHub-Otto--Destiny%2Fmufasa-24292e)](https://github.com/Otto-Destiny/mufasa)
+
 **A small foundation model that knows what African science has already found — and can reason with you about what it hasn't.**
 
 Ask most language models what has been studied about groundwater in the Cross River Basin, or which local materials have been tested as partial cement replacements in Nigeria, and you get plausible prose assembled from a global average. MUFASA answers from a corpus of **10,480 African research papers** it was actually trained on, names the study, and tells you when it doesn't know.
@@ -19,12 +23,13 @@ It runs offline, on a laptop, in about 800 MB.
 5. [Part I — Data engineering](#5-part-i--data-engineering)
 6. [Part II — Building the training set](#6-part-ii--building-the-training-set)
 7. [Part III — Model engineering](#7-part-iii--model-engineering)
-8. [Results](#8-results)
+8. [Results](#8-results) · [ADTC profiler](#85-the-official-adtc-profiler--ten-models-one-machine)
 9. [What it looks like in use](#9-what-it-looks-like-in-use)
 10. [Running MUFASA](#10-running-mufasa)
 11. [What we did not build, and why](#11-what-we-did-not-build-and-why)
-12. [Repository map](#12-repository-map)
-13. [Reproducing this](#13-reproducing-this)
+12. [Roadmap](#12-roadmap)
+13. [Repository map](#13-repository-map)
+14. [Reproducing this](#14-reproducing-this)
 
 ---
 
@@ -92,12 +97,13 @@ A Nigerian professor's paper on generic corrosion chemistry is excluded. A study
 | **Corpus** | 10,480 African research papers, 6 domains, 2000–2026 |
 | **Extraction** | 10,131 papers processed → 8 structured tables |
 | **Structured facts** | 479,143 QA pairs · 661,786 evidence spans · 265,833 observations |
-| **Training set** | 378,005 supervised examples (353,697 train) |
+| **Training set** | 378,005 supervised examples (353,697 train) — [on the Hub](https://huggingface.co/datasets/DestinyOtto/mufasa-sft-mixed) |
 | **Base model** | `unsloth/gemma-3-1b-pt` (1.0 B parameters) |
 | **Stage 1** | Continued pretraining — rsLoRA r=128, 99 M tokens |
 | **Stage 2** | Full-parameter SFT — 310 M tokens/epoch |
-| **Deployment** | GGUF Q4_K_M, ~800 MB, CPU-only, 7 GB RAM laptop |
+| **Deployment** | GGUF Q4_K_M, ~800 MB, CPU-only, 7 GB RAM laptop — [on the Hub](https://huggingface.co/DestinyOtto/mufasa-gemma3-1b-sft-gguf) |
 | **Dependencies at inference** | none — no retriever, no index, no network |
+| **Official ADTC profiler** | best composite score of 10 models (0.9144) · lowest peak RAM (1.27 GB) |
 
 ---
 
@@ -288,6 +294,10 @@ The distinction is in what the prompt withholds:
 
 The same extracted fact generates both. That is deliberate: a model that has only seen grounded answering never learns to recall, and one that has only recalled never learns to defer to a document.
 
+> The full supervised set is published at
+> **[DestinyOtto/mufasa-sft-mixed](https://huggingface.co/datasets/DestinyOtto/mufasa-sft-mixed)**
+> — 378,005 examples with their evidence spans, citations and verification tiers.
+
 ### 6.3 What the examples cover
 
 Tag distribution across a 20,000-example sample:
@@ -469,6 +479,94 @@ This is the kind of finding that only appears if you wire held-out evaluation in
 
 ---
 
+### 8.5 The official ADTC profiler — ten models, one machine
+
+The challenge's own profiler was run over MUFASA and nine reference models on
+identical hardware (4 CPU threads, 128 prompt tokens, 32 generated, ARC-Easy
+for accuracy). It reports throughput, first-token latency, peak resident
+memory, accuracy and a composite score.
+
+**MUFASA placed first on the composite score, first on accuracy, and first on
+peak memory** — against models up to four times its parameter count.
+
+| model | ARC-Easy | tok/s | TTFT (ms) | peak RSS (MB) | **ADTC score** |
+|---|---:|---:|---:|---:|---:|
+| **MUFASA-Gemma3-1B-SFT** | **0.90** | 17.45 | 2,413 | **1,275** | **0.9144** |
+| Gemma-3-1B-IT *(our base)* | 0.50 | 17.82 | 2,400 | 1,366 | 0.7119 |
+| Qwen3.5-2B | 0.50 | 11.46 | 4,568 | 2,147 | 0.6193 |
+| Gemma-4-E2B-IT | 0.60 | 9.89 | 4,972 | 4,745 | 0.5654 |
+| Gemma-3-4B-IT | 0.70 | 5.57 | 7,395 | 4,388 | 0.5390 |
+| LFM2.5-1.2B-Thinking | 0.10 | **23.11** | **2,227** | 1,652 | 0.5039 |
+| Qwen3.5-4B | 0.60 | 5.12 | 10,608 | 4,298 | 0.4825 |
+| Phi-4-Mini-Reasoning | 0.50 | 7.14 | 8,340 | 4,152 | 0.4769 |
+| Gemma-4-E4B-IT | 0.70 | 5.47 | 9,510 | 7,503 | 0.4594 |
+| LFM2.5-2.6B | 0.20 | 10.37 | 5,355 | 3,253 | 0.4166 |
+
+#### Composite score
+
+```mermaid
+xychart-beta
+    title "Official ADTC composite score — higher is better"
+    x-axis ["MUFASA", "Gemma3-1B-IT", "Qwen3.5-2B", "Gemma4-E2B", "Gemma3-4B", "LFM2.5-1.2B-T", "Qwen3.5-4B", "Phi-4-Mini", "Gemma4-E4B", "LFM2.5-2.6B"]
+    y-axis "score" 0 --> 1.0
+    bar [0.9144, 0.7119, 0.6193, 0.5654, 0.5390, 0.5039, 0.4825, 0.4769, 0.4594, 0.4166]
+```
+
+#### Peak memory — the number that decides whether it runs on your laptop
+
+```mermaid
+xychart-beta
+    title "Peak resident memory (MB) — lower is better"
+    x-axis ["MUFASA", "Gemma3-1B-IT", "LFM2.5-1.2B-T", "Qwen3.5-2B", "LFM2.5-2.6B", "Phi-4-Mini", "Qwen3.5-4B", "Gemma3-4B", "Gemma4-E2B", "Gemma4-E4B"]
+    y-axis "peak RSS (MB)" 0 --> 8000
+    bar [1275, 1366, 1652, 2147, 3253, 4152, 4298, 4388, 4745, 7503]
+```
+
+**1.27 GB peak.** The largest model in the field needs 7.5 GB — nearly six times
+as much, and more than a 8 GB laptop has to spare once an operating system is
+running. This is the measurement behind the claim that MUFASA runs on ordinary
+hardware, and it is lower than the 1.6 GB we had estimated.
+
+#### Accuracy and throughput
+
+```mermaid
+xychart-beta
+    title "ARC-Easy accuracy (acc_norm) — higher is better"
+    x-axis ["MUFASA", "Gemma3-4B", "Gemma4-E4B", "Gemma4-E2B", "Qwen3.5-4B", "Gemma3-1B-IT", "Qwen3.5-2B", "Phi-4-Mini", "LFM2.5-2.6B", "LFM2.5-1.2B-T"]
+    y-axis "acc_norm" 0 --> 1.0
+    bar [0.9, 0.7, 0.7, 0.6, 0.6, 0.5, 0.5, 0.5, 0.2, 0.1]
+```
+
+```mermaid
+xychart-beta
+    title "Generation throughput (tokens/sec) — higher is better"
+    x-axis ["LFM2.5-1.2B-T", "Gemma3-1B-IT", "MUFASA", "Qwen3.5-2B", "LFM2.5-2.6B", "Gemma4-E2B", "Phi-4-Mini", "Gemma3-4B", "Gemma4-E4B", "Qwen3.5-4B"]
+    y-axis "tokens/sec" 0 --> 25
+    bar [23.11, 17.82, 17.45, 11.46, 10.37, 9.89, 7.14, 5.57, 5.47, 5.12]
+```
+
+#### Reading this honestly
+
+**The accuracy figures come from 10 ARC-Easy items.** MUFASA scored 9/10 against
+its base model's 5/10. That is a large gap on a small sample, and the confidence
+interval around it is wide — treat it as encouraging rather than settled. A full
+ARC-Easy run is the obvious next measurement.
+
+**The memory and speed figures are not sample-limited.** Peak RSS, throughput and
+first-token latency are direct measurements, and those are where the story is
+solid: MUFASA is **7% lighter than its own base** while matching it on speed
+(17.45 vs 17.82 tok/s, 2,413 vs 2,400 ms) — so the domain adaptation cost
+essentially nothing at inference.
+
+**The comparison that matters most is the second row.** Gemma-3-1B-IT is the
+same architecture, same quantization, same profiler run — the difference between
+them is entirely what we did to it. Composite score 0.7119 → **0.9144**.
+
+The profiler notebook and its raw outputs are in
+[`02-model-engineering/sft-notebooks/mufasar-reasoning-model-benchmark-final.ipynb`](02-model-engineering/sft-notebooks/mufasar-reasoning-model-benchmark-final.ipynb).
+
+---
+
 ## 9. What it looks like in use
 
 ### Closed book — recall, with a citation
@@ -575,7 +673,74 @@ The architecture is worth reading as a statement of where this goes next: entity
 
 ---
 
-## 12. Repository map
+---
+
+## 12. Roadmap
+
+What exists today is Phase 1: a corpus, a training pipeline, and a model that
+demonstrably knows more African science than the checkpoint it started from.
+The design was always for a larger thing.
+
+```mermaid
+flowchart LR
+    subgraph P1["PHASE 1 — shipped"]
+        A1["10,480 papers"] --> A2["CPT + full SFT"] --> A3["1B model<br/>1.27 GB, offline"]
+    end
+    subgraph P2["PHASE 2"]
+        B1["100,000+ papers"] --> B2["CPT + SFT<br/>+ DPO + RL"] --> B3["substantially<br/>stronger model"]
+    end
+    subgraph P3["PHASE 3"]
+        C1["1,000,000 papers"] --> C2["full retrieval layer<br/>+ knowledge graph"] --> C3["closed-book model<br/>+ open-book system"]
+    end
+    P1 --> P2 --> P3
+    style P1 fill:#2f5d8c,color:#fff
+    style P2 fill:#7d93ad,color:#fff
+    style P3 fill:#c3c9d4
+```
+
+### Phase 2 — scale the corpus, finish the alignment stack
+
+| | now | Phase 2 |
+|---|---:|---:|
+| eligible papers | 10,480 | **100,000+** |
+| training stages | CPT → SFT | CPT → SFT → **DPO → RL** |
+
+**Ten times the corpus.** The classification protocol, extraction pipeline and
+funnel already run unattended; the binding constraint was time, not method.
+Scaling to 100,000 papers is largely a matter of throughput, and the
+[Phase 3 note on acquisition](#11-what-we-did-not-build-and-why) applies here
+too — cleaned open-access full text can supply candidates without re-deriving
+the relevance judgement.
+
+**The alignment stages we built data for but did not run.** The training-set
+builder already emits `dpo_pairs` and `preference_mixed` — chosen/rejected
+pairs with the same grounding and citation contract as the SFT set. DPO was
+scoped, the data exists, and the run did not happen. Reinforcement learning
+over the same preference signal follows it.
+
+We expect this to be where the largest gains are. The SFT run reported in §8.4
+converged at 18% of one epoch on 10,480 papers' worth of derived examples; the
+model is not short of capacity, it is short of data and of the stages that
+teach preference rather than imitation.
+
+### Phase 3 — a million papers, and the retrieval layer
+
+**1,000,000 papers.** Two orders of magnitude beyond Phase 1, which changes
+what the model can be asked. At that scale the question stops being "has anyone
+studied this" and becomes "what does the weight of African evidence say".
+
+**The full retrieval layer, finally built.** Designed and documented in
+[`03-retrieval/`](03-retrieval/) — entity canonicalisation over the 663,518
+entity mentions already extracted, licence-tiered retrieval, and a knowledge
+graph across studies. Phase 1 deliberately spent its time on the corpus and the
+model because the challenge evaluates a raw GGUF; Phase 3 is where the open-book
+half becomes a system rather than a prompt format.
+
+The pairing is the point. A closed-book model that knows the landscape, plus a
+retrieval layer that can produce the exact passage on demand — each covering the
+other's failure mode.
+
+## 13. Repository map
 
 ```
 01-data-engineering/
@@ -601,7 +766,7 @@ slides/             briefing deck and infographics
 
 ---
 
-## 13. Reproducing this
+## 14. Reproducing this
 
 ```bash
 # 1. corpus split — once, read by every later stage
@@ -673,6 +838,7 @@ The goal is a scientific AI system that is:
 ## 🔗 Links
 
 - 🤗 **MUFASA GGUF:** [huggingface.co/DestinyOtto/mufasa-gemma3-1b-sft-gguf](https://huggingface.co/DestinyOtto/mufasa-gemma3-1b-sft-gguf)
+- 🗂️ **MUFASA SFT dataset:** [huggingface.co/datasets/DestinyOtto/mufasa-sft-mixed](https://huggingface.co/datasets/DestinyOtto/mufasa-sft-mixed)
 - 🦁 **Devpost:** [devpost.com/software/mufasa](https://devpost.com/software/mufasa)
 - 🏆 **Africa Deep Tech Challenge 2026:** [adtc-2026.devpost.com](https://adtc-2026.devpost.com/)
 - 💻 **Repository:** [github.com/Otto-Destiny/mufasa](https://github.com/Otto-Destiny/mufasa)
