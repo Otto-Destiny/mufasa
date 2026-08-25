@@ -2,6 +2,26 @@ model/
 *.gguf
 *.bin
 *.safetensors
+*.pt
+*.pth
+*.ckpt
+*.onnx
+*.pdf
+*.db
+*.sqlite
+*.sqlite3
+*.lbug
+*.index
+/model/
+/04-application/backend/bin/
+/04-application/backend/models/
+/04-application/backend/history.jsonl
+
+# Tabular production artifacts. The reviewed public fixture is allowed.
+*.parquet
+!01-data-engineering/samples/classification-benchmark-200.parquet
+
+# Operating-system noise
 submission.json
 audit.json
 verdict.json
