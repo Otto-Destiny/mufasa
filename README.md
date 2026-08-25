@@ -2,6 +2,10 @@
 
 ### Models for Understanding the Frontiers of African Scientific Advancement
 
+[![Model](https://img.shields.io/badge/%F0%9F%A4%97%20Model-mufasa--gemma3--1b--sft--gguf-2f5d8c)](https://huggingface.co/DestinyOtto/mufasa-gemma3-1b-sft-gguf)
+[![Dataset](https://img.shields.io/badge/%F0%9F%A4%97%20Dataset-mufasa--sft--mixed-1d3a57)](https://huggingface.co/datasets/DestinyOtto/mufasa-sft-mixed)
+[![Repo](https://img.shields.io/badge/GitHub-Otto--Destiny%2Fmufasa-24292e)](https://github.com/Otto-Destiny/mufasa)
+
 **A small foundation model that knows what African science has already found — and can reason with you about what it hasn't.**
 
 Ask most language models what has been studied about groundwater in the Cross River Basin, or which local materials have been tested as partial cement replacements in Nigeria, and you get plausible prose assembled from a global average. MUFASA answers from a corpus of **10,480 African research papers** it was actually trained on, names the study, and tells you when it doesn't know.
@@ -92,11 +96,11 @@ A Nigerian professor's paper on generic corrosion chemistry is excluded. A study
 | **Corpus** | 10,480 African research papers, 6 domains, 2000–2026 |
 | **Extraction** | 10,131 papers processed → 8 structured tables |
 | **Structured facts** | 479,143 QA pairs · 661,786 evidence spans · 265,833 observations |
-| **Training set** | 378,005 supervised examples (353,697 train) |
+| **Training set** | 378,005 supervised examples (353,697 train) — [on the Hub](https://huggingface.co/datasets/DestinyOtto/mufasa-sft-mixed) |
 | **Base model** | `unsloth/gemma-3-1b-pt` (1.0 B parameters) |
 | **Stage 1** | Continued pretraining — rsLoRA r=128, 99 M tokens |
 | **Stage 2** | Full-parameter SFT — 310 M tokens/epoch |
-| **Deployment** | GGUF Q4_K_M, ~800 MB, CPU-only, 7 GB RAM laptop |
+| **Deployment** | GGUF Q4_K_M, ~800 MB, CPU-only, 7 GB RAM laptop — [on the Hub](https://huggingface.co/DestinyOtto/mufasa-gemma3-1b-sft-gguf) |
 | **Dependencies at inference** | none — no retriever, no index, no network |
 
 ---
@@ -287,6 +291,10 @@ The distinction is in what the prompt withholds:
 | failure mode trained | say the evidence doesn't cover it | say it doesn't know |
 
 The same extracted fact generates both. That is deliberate: a model that has only seen grounded answering never learns to recall, and one that has only recalled never learns to defer to a document.
+
+> The full supervised set is published at
+> **[DestinyOtto/mufasa-sft-mixed](https://huggingface.co/datasets/DestinyOtto/mufasa-sft-mixed)**
+> — 378,005 examples with their evidence spans, citations and verification tiers.
 
 ### 6.3 What the examples cover
 
@@ -673,6 +681,7 @@ The goal is a scientific AI system that is:
 ## 🔗 Links
 
 - 🤗 **MUFASA GGUF:** [huggingface.co/DestinyOtto/mufasa-gemma3-1b-sft-gguf](https://huggingface.co/DestinyOtto/mufasa-gemma3-1b-sft-gguf)
+- 🗂️ **MUFASA SFT dataset:** [huggingface.co/datasets/DestinyOtto/mufasa-sft-mixed](https://huggingface.co/datasets/DestinyOtto/mufasa-sft-mixed)
 - 🦁 **Devpost:** [devpost.com/software/mufasa](https://devpost.com/software/mufasa)
 - 🏆 **Africa Deep Tech Challenge 2026:** [adtc-2026.devpost.com](https://adtc-2026.devpost.com/)
 - 💻 **Repository:** [github.com/Otto-Destiny/mufasa](https://github.com/Otto-Destiny/mufasa)
