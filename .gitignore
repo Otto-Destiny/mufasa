@@ -111,3 +111,12 @@ desktop.ini
 # and the converted scripts
 !/01-data-engineering/data-extraction/pipeline-scripts/
 !/01-data-engineering/data-extraction/pipeline-scripts/*.py
+
+# --- from main -------------------------------------------------------------
+model/
+*.bin
+submission.json
+audit.json
+verdict.json
+__pycache__/
+*.pyc

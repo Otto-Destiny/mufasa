@@ -1,4 +1,6 @@
-# MUFASA
+# 🦁 MUFASA
+
+### Models for Understanding the Frontiers of African Scientific Advancement
 
 **A small foundation model that knows what African science has already found — and can reason with you about what it hasn't.**
 
@@ -530,6 +532,33 @@ flowchart LR
 | network | not required at any point |
 | runtime | llama.cpp, Ollama, LM Studio |
 
+### Build and run
+
+Install or build [`llama.cpp`](https://github.com/ggml-org/llama.cpp), then download the Q4_K_M GGUF from the Hugging Face repository.
+
+### Build llama.cpp
+
+```bash
+git clone https://github.com/ggml-org/llama.cpp
+cd llama.cpp
+
+cmake -B build
+cmake --build build --config Release -j
+```
+
+### Run MUFASA
+
+```bash
+./build/bin/llama-cli \
+  -m /path/to/MUFASA-Gemma3-1B-SFT-Q4_K_M.gguf \
+  -p "Explain how vegetation loss can reinforce drought conditions in the Sahel."
+```
+
+Once the model weights are downloaded, no cloud inference API is required.
+
+---
+
+
 This matters more than a benchmark number. A researcher on intermittent connectivity, on institutional hardware, working with unpublished data they cannot send to an API — this runs on their laptop, in a field station, on a plane.
 
 ---
@@ -594,6 +623,69 @@ torchrun --standalone --nproc_per_node 8 02-model-engineering/vast/train_sft.py 
 ```
 
 The heavy artifacts — the paper corpus, the Parquet tables, model weights — are not in this repository. The code that produces them is.
+
+---
+
+---
+
+# 🦁 What MUFASA Stands For
+
+| Letter | Meaning |
+|---|---|
+| **M** | Models |
+| **U** | Understanding |
+| **F** | Frontiers |
+| **A** | African |
+| **S** | Scientific |
+| **A** | Advancement |
+
+**MUFASA = Models for Understanding the Frontiers of African Scientific Advancement**
+
+---
+
+# 🌍 Vision
+
+MUFASA is ultimately about making capable scientific AI more accessible.
+
+Instead of assuming:
+
+```text
+Large GPUs + Cloud APIs + Constant Connectivity
+```
+
+we are exploring:
+
+```text
+Compact Models
++ Domain Adaptation
++ Local Evidence
++ Efficient CPU Inference
+```
+
+The goal is a scientific AI system that is:
+
+> **small enough to run locally, specialized enough to be useful, grounded enough to inspect, and efficient enough to work on hardware people actually have.**
+
+---
+
+---
+
+## 🔗 Links
+
+- 🤗 **MUFASA GGUF:** [huggingface.co/DestinyOtto/mufasa-gemma3-1b-sft-gguf](https://huggingface.co/DestinyOtto/mufasa-gemma3-1b-sft-gguf)
+- 🦁 **Devpost:** [devpost.com/software/mufasa](https://devpost.com/software/mufasa)
+- 🏆 **Africa Deep Tech Challenge 2026:** [adtc-2026.devpost.com](https://adtc-2026.devpost.com/)
+- 💻 **Repository:** [github.com/Otto-Destiny/mufasa](https://github.com/Otto-Destiny/mufasa)
+
+---
+
+---
+
+## 📄 License
+
+Repository code and documentation are released under the **Apache License 2.0**.
+
+See [`LICENSE`](LICENSE) and [`NOTICE`](NOTICE) for details.
 
 ---
 
