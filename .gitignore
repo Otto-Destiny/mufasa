@@ -1,57 +1,6 @@
-# Local agent and editor state
-.agents/
-.codex/
-.vscode/
-
-# Secrets
-**/.env
-**/.env.*
-!**/.env.example
-
-# Python and notebook state
-**/__pycache__/
-*.py[cod]
-.pytest_cache/
-.ruff_cache/
-**/.ipynb_checkpoints/
-.venv/
-venv/
-
-# JavaScript and application builds
-**/node_modules/
-**/dist/
-**/build/
-**/target/
-
-# Local data-engineering workspaces and generated outputs
-**/raw/
-**/downloads/
-**/artifacts/
-**/outputs/
-**/classification_output/
-**/parts/
-**/partitions/
-**/sub_partitions*/
-**/batches/
-**/states/
-*.log
-
-# data-extraction holds source and data side by side. Track the source,
-# never the data. Ignore the whole tree, then re-admit what belongs in Git.
-# The directory line matters: Git will not descend into an excluded
-# directory, so without it the scripts under classification_output/ and
-# openalex_ng_science_2000_2026/ would stay invisible.
-/01-data-engineering/data-extraction/**
-!/01-data-engineering/data-extraction/**/
-!/01-data-engineering/data-extraction/**/*.py
-!/01-data-engineering/data-extraction/*.md
-# Re-ignore vendored dependencies. The negation above is a later rule than
-# the global node_modules line, so without this it drags in every bundled
-# .py from pnpm and node-gyp.
-/01-data-engineering/data-extraction/**/node_modules/
-
-# Large model, document, database, and index artifacts
+model/
 *.gguf
+*.bin
 *.safetensors
 *.pt
 *.pth
@@ -73,11 +22,10 @@ venv/
 !01-data-engineering/samples/classification-benchmark-200.parquet
 
 # Operating-system noise
+submission.json
+audit.json
+verdict.json
+__pycache__/
+*.pyc
+.venv/
 .DS_Store
-Thumbs.db
-desktop.ini
-~$*
-
-# Private working notes. Anything named *.local.md stays on the machine that
-# wrote it - raw discussion, half-formed ideas, notes not meant for the repo.
-*.local.md
