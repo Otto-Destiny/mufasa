@@ -140,7 +140,7 @@ flowchart TD
     K --> L["Stage 2: Full-parameter SFT"]
     J --> L
     L --> M["GGUF Q4_K_M<br/>~800 MB"]
-    style A fill:#c3c9d4
+    style A fill:#c3c9d4,color:#111,stroke:#8d94a3
     style M fill:#2f5d8c,color:#fff
     style X fill:#a34434,color:#fff
 ```
@@ -346,7 +346,7 @@ flowchart LR
     B -->|"merge"| C["16-bit CPT model"]
     C -->|"Stage 2<br/>full-parameter SFT"| D["knows how to<br/>answer about it"]
     D -->|"quantize"| E["GGUF Q4_K_M"]
-    style A fill:#c3c9d4
+    style A fill:#c3c9d4,color:#111,stroke:#8d94a3
     style E fill:#2f5d8c,color:#fff
 ```
 
@@ -694,8 +694,8 @@ flowchart LR
     end
     P1 --> P2 --> P3
     style P1 fill:#2f5d8c,color:#fff
-    style P2 fill:#7d93ad,color:#fff
-    style P3 fill:#c3c9d4
+    style P2 fill:#7d93ad,color:#111,stroke:#5d7086
+    style P3 fill:#c3c9d4,color:#111,stroke:#8d94a3
 ```
 
 ### Phase 2 — scale the corpus, finish the alignment stack
