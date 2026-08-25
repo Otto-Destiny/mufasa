@@ -35,6 +35,11 @@ class Settings(BaseSettings):
     llama_server_url: str = "http://127.0.0.1:8080"
     llama_server_bin: Path = Path("./bin/llama-server")
 
+    # -- demo ---------------------------------------------------------------
+    # Straight to the model, streaming, no retrieval. For live demonstration
+    # when the evidence database is cold or unavailable.
+    mufasa_demo_mode: bool = False
+
     # -- resource governor -------------------------------------------------
     mufasa_max_context_tokens: int = 2048
     mufasa_max_output_tokens: int = 400

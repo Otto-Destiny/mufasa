@@ -125,3 +125,7 @@ __pycache__/
 /04-application/backend/bin/
 /04-application/backend/models/
 /04-application/backend/history.jsonl
+
+# llama.cpp extraction scratch
+/tmp-llama/
+/llama.zip

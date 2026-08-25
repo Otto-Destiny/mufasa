@@ -221,6 +221,13 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     # -- ask ---------------------------------------------------------------
 
     def _run(question: str, job) -> dict[str, Any]:  # type: ignore[no-untyped-def]
+        if settings.mufasa_demo_mode:
+            text = generator().generate(
+                question, max_tokens=governor.max_output_tokens, temperature=0.0,
+            )
+            return {"question": question, "answer": text, "text": text,
+                    "evidence": [], "records": [], "citations": [],
+                    "validated": False, "demo_mode": True}
         conn = db()
         try:
             result = answer(
@@ -256,6 +263,66 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         _append_history(question, out)
         return out
 
+    def _demo_events(question: str, job) -> Iterator[str]:  # type: ignore[no-untyped-def]
+        """Stream tokens straight from llama-server. No database, no validator."""
+        import json as _json
+        import urllib.request as _url
+
+        started = time.perf_counter()
+        yield _sse("job", {"job_id": job.job_id})
+        yield _sse("stage", {"stage": "generating", "demo_mode": True})
+
+        payload = {
+            "model": settings.mufasa_model,
+            "messages": [{"role": "user", "content": question}],
+            "max_tokens": governor.max_output_tokens,
+            "temperature": 0.0,
+            "stream": True,
+        }
+        request = _url.Request(
+            f"{settings.llama_server_url.rstrip('/')}/v1/chat/completions",
+            data=_json.dumps(payload).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        pieces: list[str] = []
+        with _url.urlopen(request, timeout=240) as response:  # noqa: S310
+            for raw in response:
+                if job.cancelled.is_set():
+                    raise Cancelled("cancelled")
+                line = raw.decode("utf-8", "replace").strip()
+                if not line.startswith("data:"):
+                    continue
+                body = line[5:].strip()
+                if body == "[DONE]":
+                    break
+                try:
+                    delta = _json.loads(body)["choices"][0]["delta"].get("content") or ""
+                except (KeyError, IndexError, ValueError):
+                    continue
+                if not delta:
+                    continue
+                pieces.append(delta)
+                # Two shapes, so a UI that understands either will render it.
+                yield _sse("token", {"text": delta})
+                yield _sse("stage", {"stage": "writing", "partial": "".join(pieces)})
+
+        answer_text = "".join(pieces).strip()
+        out = {
+            "question": question,
+            "answer": answer_text,
+            "text": answer_text,
+            "evidence": [],
+            "records": [],
+            "citations": [],
+            "validated": False,
+            "demo_mode": True,
+            "generator": settings.mufasa_model,
+            "elapsed_ms": int((time.perf_counter() - started) * 1000),
+        }
+        _append_history(question, out)
+        yield _sse("answer", out)
+
     @app.get("/api/ask/stream")
     def ask_stream(q: str = Query(..., min_length=1)) -> StreamingResponse:
         try:
@@ -266,6 +333,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         def events() -> Iterator[str]:
             started = time.perf_counter()
             try:
+                if settings.mufasa_demo_mode:
+                    yield from _demo_events(q, job)
+                    return
                 yield _sse("job", {"job_id": job.job_id})
                 # Runs on a worker thread, so each stage reaches the client while
                 # the model is still writing rather than all at once at the end.
