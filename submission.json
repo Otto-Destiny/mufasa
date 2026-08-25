@@ -22,11 +22,11 @@
     "test_prompts": [
       {
         "prompt_id": "tp_001",
-        "prompt": "A smallholder maize field in northern Nigeria receives 42 mm of rainfall in one week. Estimated crop evapotranspiration is 31 mm, surface runoff is 6 mm, and deep percolation is 3 mm. Assuming negligible irrigation, calculate the weekly change in soil-water storage in millimetres and cubic metres per hectare. Show the reasoning and state one agronomic implication if the same balance persists for four weeks."
+        "prompt": "A maize field receives 30 mm of rainfall in one week and loses 20 mm of water through evapotranspiration. Ignoring runoff and drainage, what is the change in soil water storage? Show the calculation."
       },
       {
         "prompt_id": "tp_002",
-        "prompt": "A Sahelian monitoring site shows a sharp decline in NDVI over six weeks. Rainfall is below the long-term mean, daytime land-surface temperature has increased, and there is no evidence of recent harvesting. Explain how these observations support or weaken a drought interpretation, identify one alternative explanation that should still be checked, and name two additional measurements that would reduce uncertainty."
+        "prompt": "What does NDVI tell us about vegetation? Explain it in simple terms and state what a high NDVI value usually means."
       }
     ],
     "model": {
@@ -45,15 +45,15 @@
     "os": "Windows-11-10.0.26200-SP0"
   },
   "throughput": {
-    "tokens_per_second_generation": 15.12,
-    "first_token_latency_ms": 2594.99,
+    "tokens_per_second_generation": 14.59,
+    "first_token_latency_ms": 2671.85,
     "prompt_tokens": 512,
     "generated_tokens": 128
   },
   "memory": {
-    "peak_rss_mb": 957.76,
-    "steady_state_rss_mb": 929.7,
-    "peak_vms_mb": 1075.77
+    "peak_rss_mb": 963.04,
+    "steady_state_rss_mb": 931.42,
+    "peak_vms_mb": 1074.81
   },
   "accuracy": [
     {
@@ -66,7 +66,7 @@
     }
   ],
   "cpu_thermal": {
-    "cpu_percent_p99": 96.0,
+    "cpu_percent_p99": 95.7,
     "core_temp_c_peak": null,
     "throttled": false
   },
