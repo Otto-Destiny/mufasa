@@ -1,0 +1,39 @@
+{
+  "team_id": "mufasa",
+  "domain": "math_scientific_reasoning",
+  "language_scope": [
+    "en"
+  ],
+  "african_alpha_claim": true,
+  "budget_laptop_claim": true,
+  "submitter": {
+    "name": "William Alabi",
+    "email": "willieseun2018@gmail.com",
+    "github_handle": "willieseun"
+  },
+  "cross_disciplinary_pairing": {
+    "discipline": "African scientific reasoning and education",
+    "load_bearing": true,
+    "description": "MUFASA is an offline scientific-reasoning model for African learners, researchers and technical practitioners. The model is adapted on African research literature and supervised scientific conversations, then deployed as a compact GGUF model for local CPU inference on affordable hardware."
+  },
+  "test_prompts": [
+    {
+      "prompt_id": "tp_001",
+      "prompt": "A smallholder maize field in northern Nigeria receives 42 mm of rainfall in one week. Estimated crop evapotranspiration is 31 mm, surface runoff is 6 mm, and deep percolation is 3 mm. Assuming negligible irrigation, calculate the weekly change in soil-water storage in millimetres and cubic metres per hectare. Show the reasoning and state one agronomic implication if the same balance persists for four weeks."
+    },
+    {
+      "prompt_id": "tp_002",
+      "prompt": "A Sahelian monitoring site shows a sharp decline in NDVI over six weeks. Rainfall is below the long-term mean, daytime land-surface temperature has increased, and there is no evidence of recent harvesting. Explain how these observations support or weaken a drought interpretation, identify one alternative explanation that should still be checked, and name two additional measurements that would reduce uncertainty."
+    }
+  ],
+  "model": {
+    "name": "MUFASA-Gemma3-1B-SFT-Q4_K_M",
+    "runtime": "llama.cpp",
+    "quantization": "GGUF Q4_K_M",
+    "parameters_estimate": "1B",
+    "packaging": "binary_bundle"
+  },
+  "_runtime": {
+    "model_path": "model/MUFASA-Gemma3-1B-SFT-Q4_K_M.gguf"
+  }
+}
