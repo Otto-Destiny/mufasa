@@ -23,7 +23,7 @@ It runs offline, on a laptop, in about 800 MB.
 5. [Part I — Data engineering](#5-part-i--data-engineering)
 6. [Part II — Building the training set](#6-part-ii--building-the-training-set)
 7. [Part III — Model engineering](#7-part-iii--model-engineering)
-8. [Results](#8-results)
+8. [Results](#8-results) · [ADTC profiler](#85-the-official-adtc-profiler--ten-models-one-machine)
 9. [What it looks like in use](#9-what-it-looks-like-in-use)
 10. [Running MUFASA](#10-running-mufasa)
 11. [What we did not build, and why](#11-what-we-did-not-build-and-why)
@@ -102,6 +102,7 @@ A Nigerian professor's paper on generic corrosion chemistry is excluded. A study
 | **Stage 2** | Full-parameter SFT — 310 M tokens/epoch |
 | **Deployment** | GGUF Q4_K_M, ~800 MB, CPU-only, 7 GB RAM laptop — [on the Hub](https://huggingface.co/DestinyOtto/mufasa-gemma3-1b-sft-gguf) |
 | **Dependencies at inference** | none — no retriever, no index, no network |
+| **Official ADTC profiler** | best composite score of 10 models (0.9144) · lowest peak RAM (1.27 GB) |
 
 ---
 
@@ -474,6 +475,94 @@ xychart-beta
 **The model converged at 18% of one epoch.** Training loss kept falling while validation turned upward — the textbook signature. The best checkpoint is step 1,000, and running to the end of the epoch would have produced a worse model at five times the cost.
 
 This is the kind of finding that only appears if you wire held-out evaluation in from the start.
+
+---
+
+### 8.5 The official ADTC profiler — ten models, one machine
+
+The challenge's own profiler was run over MUFASA and nine reference models on
+identical hardware (4 CPU threads, 128 prompt tokens, 32 generated, ARC-Easy
+for accuracy). It reports throughput, first-token latency, peak resident
+memory, accuracy and a composite score.
+
+**MUFASA placed first on the composite score, first on accuracy, and first on
+peak memory** — against models up to four times its parameter count.
+
+| model | ARC-Easy | tok/s | TTFT (ms) | peak RSS (MB) | **ADTC score** |
+|---|---:|---:|---:|---:|---:|
+| **MUFASA-Gemma3-1B-SFT** | **0.90** | 17.45 | 2,413 | **1,275** | **0.9144** |
+| Gemma-3-1B-IT *(our base)* | 0.50 | 17.82 | 2,400 | 1,366 | 0.7119 |
+| Qwen3.5-2B | 0.50 | 11.46 | 4,568 | 2,147 | 0.6193 |
+| Gemma-4-E2B-IT | 0.60 | 9.89 | 4,972 | 4,745 | 0.5654 |
+| Gemma-3-4B-IT | 0.70 | 5.57 | 7,395 | 4,388 | 0.5390 |
+| LFM2.5-1.2B-Thinking | 0.10 | **23.11** | **2,227** | 1,652 | 0.5039 |
+| Qwen3.5-4B | 0.60 | 5.12 | 10,608 | 4,298 | 0.4825 |
+| Phi-4-Mini-Reasoning | 0.50 | 7.14 | 8,340 | 4,152 | 0.4769 |
+| Gemma-4-E4B-IT | 0.70 | 5.47 | 9,510 | 7,503 | 0.4594 |
+| LFM2.5-2.6B | 0.20 | 10.37 | 5,355 | 3,253 | 0.4166 |
+
+#### Composite score
+
+```mermaid
+xychart-beta
+    title "Official ADTC composite score — higher is better"
+    x-axis ["MUFASA", "Gemma3-1B-IT", "Qwen3.5-2B", "Gemma4-E2B", "Gemma3-4B", "LFM2.5-1.2B-T", "Qwen3.5-4B", "Phi-4-Mini", "Gemma4-E4B", "LFM2.5-2.6B"]
+    y-axis "score" 0 --> 1.0
+    bar [0.9144, 0.7119, 0.6193, 0.5654, 0.5390, 0.5039, 0.4825, 0.4769, 0.4594, 0.4166]
+```
+
+#### Peak memory — the number that decides whether it runs on your laptop
+
+```mermaid
+xychart-beta
+    title "Peak resident memory (MB) — lower is better"
+    x-axis ["MUFASA", "Gemma3-1B-IT", "LFM2.5-1.2B-T", "Qwen3.5-2B", "LFM2.5-2.6B", "Phi-4-Mini", "Qwen3.5-4B", "Gemma3-4B", "Gemma4-E2B", "Gemma4-E4B"]
+    y-axis "peak RSS (MB)" 0 --> 8000
+    bar [1275, 1366, 1652, 2147, 3253, 4152, 4298, 4388, 4745, 7503]
+```
+
+**1.27 GB peak.** The largest model in the field needs 7.5 GB — nearly six times
+as much, and more than a 8 GB laptop has to spare once an operating system is
+running. This is the measurement behind the claim that MUFASA runs on ordinary
+hardware, and it is lower than the 1.6 GB we had estimated.
+
+#### Accuracy and throughput
+
+```mermaid
+xychart-beta
+    title "ARC-Easy accuracy (acc_norm) — higher is better"
+    x-axis ["MUFASA", "Gemma3-4B", "Gemma4-E4B", "Gemma4-E2B", "Qwen3.5-4B", "Gemma3-1B-IT", "Qwen3.5-2B", "Phi-4-Mini", "LFM2.5-2.6B", "LFM2.5-1.2B-T"]
+    y-axis "acc_norm" 0 --> 1.0
+    bar [0.9, 0.7, 0.7, 0.6, 0.6, 0.5, 0.5, 0.5, 0.2, 0.1]
+```
+
+```mermaid
+xychart-beta
+    title "Generation throughput (tokens/sec) — higher is better"
+    x-axis ["LFM2.5-1.2B-T", "Gemma3-1B-IT", "MUFASA", "Qwen3.5-2B", "LFM2.5-2.6B", "Gemma4-E2B", "Phi-4-Mini", "Gemma3-4B", "Gemma4-E4B", "Qwen3.5-4B"]
+    y-axis "tokens/sec" 0 --> 25
+    bar [23.11, 17.82, 17.45, 11.46, 10.37, 9.89, 7.14, 5.57, 5.47, 5.12]
+```
+
+#### Reading this honestly
+
+**The accuracy figures come from 10 ARC-Easy items.** MUFASA scored 9/10 against
+its base model's 5/10. That is a large gap on a small sample, and the confidence
+interval around it is wide — treat it as encouraging rather than settled. A full
+ARC-Easy run is the obvious next measurement.
+
+**The memory and speed figures are not sample-limited.** Peak RSS, throughput and
+first-token latency are direct measurements, and those are where the story is
+solid: MUFASA is **7% lighter than its own base** while matching it on speed
+(17.45 vs 17.82 tok/s, 2,413 vs 2,400 ms) — so the domain adaptation cost
+essentially nothing at inference.
+
+**The comparison that matters most is the second row.** Gemma-3-1B-IT is the
+same architecture, same quantization, same profiler run — the difference between
+them is entirely what we did to it. Composite score 0.7119 → **0.9144**.
+
+The profiler notebook and its raw outputs are in
+[`02-model-engineering/sft-notebooks/mufasar-reasoning-model-benchmark-final.ipynb`](02-model-engineering/sft-notebooks/mufasar-reasoning-model-benchmark-final.ipynb).
 
 ---
 
