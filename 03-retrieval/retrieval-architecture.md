@@ -2,6 +2,8 @@
 
 **Layer 3 of 4.** MUFASA's evidence graph, how it is built off-device, and how it is queried on-device while the model answers.
 
+> **⚠ Provisional — guidance, not specification.** Use the direction and the reasoning. Treat the concrete specifics — schema, queries, database choice, exact node and field names — as illustrative only: they are one possible shape, not a decision, and they might change.
+
 > **All examples in this document are synthetic.** Paper identifiers like `P-1024` are placeholders. No real DOI appears here. Before anything reaches a report, a demo or a slide, it must come from a record you have verified against the actual source.
 
 ## Two planes, kept separate

@@ -45,6 +45,13 @@ venv/
 !/01-data-engineering/data-extraction/**/
 !/01-data-engineering/data-extraction/**/*.py
 !/01-data-engineering/data-extraction/*.md
+!/01-data-engineering/data-extraction/download-and-parse-pdfs.ipynb
+!/01-data-engineering/data-extraction/llm-claim-extraction.ipynb
+!/01-data-engineering/data-extraction/prompt-versions/README.md
+!/01-data-engineering/data-extraction/prompt-versions/mufasa-extraction-2.2-candidate.2/*.md
+!/01-data-engineering/data-extraction/prompt-versions/mufasa-extraction-2.2-candidate.2/*.txt
+!/01-data-engineering/data-extraction/prompt-versions/mufasa-extraction-2.3-candidate.1/*.md
+!/01-data-engineering/data-extraction/prompt-versions/mufasa-extraction-2.3-candidate.1/*.txt
 # Re-ignore vendored dependencies. The negation above is a later rule than
 # the global node_modules line, so without this it drags in every bundled
 # .py from pnpm and node-gyp.
@@ -78,3 +85,29 @@ desktop.ini
 # Private working notes. Anything named *.local.md stays on the machine that
 # wrote it - raw discussion, half-formed ideas, notes not meant for the repo.
 *.local.md
+
+# ---------------------------------------------------------------------------
+# Judge-facing push. Code and results travel; corpora and weights do not.
+# ---------------------------------------------------------------------------
+
+# Archives. corpus_splits.zip alone is 146 MB.
+*.zip
+
+# The Colab staging folder: parquet tables and a 153 MB markdown archive.
+/upload to colab/
+
+# Test scratch
+/.test_runtime/
+/.pytest_tmp_*/
+
+# Notebooks are ignored by the data-extraction rule above; these five carry
+# results a judge should be able to read without running anything.
+!/01-data-engineering/data-extraction/build-training-set.ipynb
+!/01-data-engineering/data-extraction/split-corpus.ipynb
+!/01-data-engineering/data-extraction/prepare-citation-metadata.ipynb
+!/01-data-engineering/data-extraction/sample-training-set.ipynb
+!/01-data-engineering/data-extraction/production-classification.ipynb
+
+# and the converted scripts
+!/01-data-engineering/data-extraction/pipeline-scripts/
+!/01-data-engineering/data-extraction/pipeline-scripts/*.py

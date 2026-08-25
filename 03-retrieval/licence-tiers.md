@@ -1,5 +1,7 @@
 # Licence tiers and coverage records
 
+> **⚠ Provisional — guidance, not specification.** Use the direction and the reasoning. Treat the concrete specifics — schema, queries, database choice, exact node and field names — as illustrative only: they are one possible shape, not a decision, and they might change.
+
 **What this decides:** how MUFASA represents a paper whose licence does not allow
 us to reproduce its text, without pretending the paper does not exist.
 
