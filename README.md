@@ -140,7 +140,7 @@ flowchart TD
     K --> L["Stage 2: Full-parameter SFT"]
     J --> L
     L --> M["GGUF Q4_K_M<br/>~800 MB"]
-    style A fill:#c3c9d4,color:#111,stroke:#8d94a3
+    style A fill:#4a5568,color:#fff
     style M fill:#2f5d8c,color:#fff
     style X fill:#a34434,color:#fff
 ```
@@ -168,8 +168,8 @@ On a 1,656-paper labelled benchmark:
 ```mermaid
 xychart-beta
     title "Relevance classification outcomes (n=1,656)"
-    x-axis ["exclude", "include", "review"]
-    y-axis "papers" 0 --> 1000
+    x-axis [exclude, include, review]
+    y-axis 0 --> 1000
     bar [894, 670, 92]
 ```
 
@@ -184,8 +184,8 @@ A useful property emerged: `african_centrality` is **strongly bimodal** — 725 
 ```mermaid
 xychart-beta
     title "Papers by domain"
-    x-axis ["Health", "Environment", "Agriculture", "Energy", "Materials", "Technology"]
-    y-axis "papers" 0 --> 4000
+    x-axis [HLT, ENV, AGR, ENR, MAT, TEC]
+    y-axis 0 --> 4000
     bar [3838, 2550, 2401, 787, 599, 305]
 ```
 
@@ -246,8 +246,8 @@ flowchart LR
 ```mermaid
 xychart-beta
     title "Citation resolution across 10,480 papers"
-    x-axis ["VERIFIED", "METADATA_ONLY", "CONFLICT", "CORRECTED"]
-    y-axis "papers" 0 --> 5000
+    x-axis [verified, metadata, conflict, corrected]
+    y-axis 0 --> 5000
     bar [4837, 2436, 2006, 1201]
 ```
 
@@ -305,8 +305,8 @@ Tag distribution across a 20,000-example sample:
 ```mermaid
 xychart-beta
     title "Reasoning categories in the training set (sample of 20,000)"
-    x-axis ["FACTUAL", "REASONING", "QUANTITATIVE", "INNOVATION", "METHOD", "CONCEPT", "LIMITATION", "ARGUMENT", "MECHANISM"]
-    y-axis "examples" 0 --> 9000
+    x-axis [factual, reasoning, quant, innov, method, concept, limit, arg, mech]
+    y-axis 0 --> 9000
     bar [8528, 7611, 7606, 1801, 1738, 1537, 1071, 834, 815]
 ```
 
@@ -346,7 +346,7 @@ flowchart LR
     B -->|"merge"| C["16-bit CPT model"]
     C -->|"Stage 2<br/>full-parameter SFT"| D["knows how to<br/>answer about it"]
     D -->|"quantize"| E["GGUF Q4_K_M"]
-    style A fill:#c3c9d4,color:#111,stroke:#8d94a3
+    style A fill:#4a5568,color:#fff
     style E fill:#2f5d8c,color:#fff
 ```
 
@@ -371,8 +371,8 @@ Validation loss over the run:
 ```mermaid
 xychart-beta
     title "CPT validation loss"
-    x-axis ["100", "200", "300", "400", "500", "600", "700", "800"]
-    y-axis "loss" 1.74 --> 1.83
+    x-axis [100, 200, 300, 400, 500, 600, 700, 800]
+    y-axis 1.74 --> 1.83
     line [1.8207, 1.7940, 1.7802, 1.7695, 1.7622, 1.7561, 1.7523, 1.7496]
 ```
 
@@ -426,8 +426,8 @@ A purpose-built probe: 400 cloze items over local concepts — `Xylopia aethiopi
 ```mermaid
 xychart-beta
     title "African concept span perplexity — lower is better"
-    x-axis ["trained papers", "held-out papers"]
-    y-axis "span perplexity" 0 --> 24
+    x-axis [trained, held-out]
+    y-axis 0 --> 24
     bar [19.30, 20.78]
     bar [12.84, 14.78]
 ```
@@ -467,8 +467,8 @@ The full-parameter SFT run was halted deliberately at step ~1,547 of 5,527, beca
 ```mermaid
 xychart-beta
     title "SFT: training loss falls while validation turns — classic overfitting"
-    x-axis ["250", "500", "750", "1000", "1250", "1500"]
-    y-axis "loss" 0.55 --> 0.80
+    x-axis [250, 500, 750, 1000, 1250, 1500]
+    y-axis 0.55 --> 0.80
     line [0.7467, 0.7279, 0.7179, 0.7107, 0.6850, 0.6537]
     line [0.6037, 0.5951, 0.5951, 0.5930, 0.6000, 0.6119]
 ```
@@ -507,8 +507,8 @@ peak memory** — against models up to four times its parameter count.
 ```mermaid
 xychart-beta
     title "Official ADTC composite score — higher is better"
-    x-axis ["MUFASA", "Gemma3-1B-IT", "Qwen3.5-2B", "Gemma4-E2B", "Gemma3-4B", "LFM2.5-1.2B-T", "Qwen3.5-4B", "Phi-4-Mini", "Gemma4-E4B", "LFM2.5-2.6B"]
-    y-axis "score" 0 --> 1.0
+    x-axis [MUFASA, G3-1B, Q3.5-2B, G4-E2B, G3-4B, LFM-1.2B, Q3.5-4B, Phi4, G4-E4B, LFM-2.6B]
+    y-axis 0 --> 1.0
     bar [0.9144, 0.7119, 0.6193, 0.5654, 0.5390, 0.5039, 0.4825, 0.4769, 0.4594, 0.4166]
 ```
 
@@ -517,8 +517,8 @@ xychart-beta
 ```mermaid
 xychart-beta
     title "Peak resident memory (MB) — lower is better"
-    x-axis ["MUFASA", "Gemma3-1B-IT", "LFM2.5-1.2B-T", "Qwen3.5-2B", "LFM2.5-2.6B", "Phi-4-Mini", "Qwen3.5-4B", "Gemma3-4B", "Gemma4-E2B", "Gemma4-E4B"]
-    y-axis "peak RSS (MB)" 0 --> 8000
+    x-axis [MUFASA, G3-1B, LFM-1.2B, Q3.5-2B, LFM-2.6B, Phi4, Q3.5-4B, G3-4B, G4-E2B, G4-E4B]
+    y-axis 0 --> 8000
     bar [1275, 1366, 1652, 2147, 3253, 4152, 4298, 4388, 4745, 7503]
 ```
 
@@ -532,16 +532,16 @@ hardware, and it is lower than the 1.6 GB we had estimated.
 ```mermaid
 xychart-beta
     title "ARC-Easy accuracy (acc_norm) — higher is better"
-    x-axis ["MUFASA", "Gemma3-4B", "Gemma4-E4B", "Gemma4-E2B", "Qwen3.5-4B", "Gemma3-1B-IT", "Qwen3.5-2B", "Phi-4-Mini", "LFM2.5-2.6B", "LFM2.5-1.2B-T"]
-    y-axis "acc_norm" 0 --> 1.0
+    x-axis [MUFASA, G3-4B, G4-E4B, G4-E2B, Q3.5-4B, G3-1B, Q3.5-2B, Phi4, LFM-2.6B, LFM-1.2B]
+    y-axis 0 --> 1.0
     bar [0.9, 0.7, 0.7, 0.6, 0.6, 0.5, 0.5, 0.5, 0.2, 0.1]
 ```
 
 ```mermaid
 xychart-beta
     title "Generation throughput (tokens/sec) — higher is better"
-    x-axis ["LFM2.5-1.2B-T", "Gemma3-1B-IT", "MUFASA", "Qwen3.5-2B", "LFM2.5-2.6B", "Gemma4-E2B", "Phi-4-Mini", "Gemma3-4B", "Gemma4-E4B", "Qwen3.5-4B"]
-    y-axis "tokens/sec" 0 --> 25
+    x-axis [LFM-1.2B, G3-1B, MUFASA, Q3.5-2B, LFM-2.6B, G4-E2B, Phi4, G3-4B, G4-E4B, Q3.5-4B]
+    y-axis 0 --> 25
     bar [23.11, 17.82, 17.45, 11.46, 10.37, 9.89, 7.14, 5.57, 5.47, 5.12]
 ```
 
@@ -694,8 +694,8 @@ flowchart LR
     end
     P1 --> P2 --> P3
     style P1 fill:#2f5d8c,color:#fff
-    style P2 fill:#7d93ad,color:#111,stroke:#5d7086
-    style P3 fill:#c3c9d4,color:#111,stroke:#8d94a3
+    style P2 fill:#3d6182,color:#fff
+    style P3 fill:#4a5568,color:#fff
 ```
 
 ### Phase 2 — scale the corpus, finish the alignment stack
