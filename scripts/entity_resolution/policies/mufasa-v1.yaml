@@ -1,0 +1,273 @@
+version: mufasa-resolver-policy-v2-candidate.1
+normalization_version: mufasa-normalization-v1
+schema_version: 2.3-candidate.1
+qualifier_vocab_version: mufasa-qualifier-v1.1-candidate.1
+condition_vocab_version: mufasa-condition-v1.0-candidate.1
+extraction_prompt_version: mufasa-extraction-2.3-candidate.1
+code_version: mufasa-entity-resolution-0.2.0-candidate.1
+
+capabilities:
+  python: ">=3.10,<3.14"
+  python_packages:
+    pandas: ">=2.2,<3"
+    pyarrow: ">=14,<24"
+    rapidfuzz: ">=3,<4"
+    numpy: ">=1.26,<3"
+    PyYAML: ">=6,<7"
+    packaging: ">=23,<27"
+
+conditions:
+  names:
+    - BASELINE_STATUS
+    - DISEASE_STAGE
+    - DOSE_EXPOSURE
+    - DURATION
+    - ENVIRONMENTAL_STATE
+    - EXPERIMENTAL_SETTING
+    - MEASUREMENT_SETTING
+    - PH
+    - PRESSURE
+    - SALINITY
+    - SAMPLING_SETTING
+    - SEASON
+    - STATISTICAL_THRESHOLD
+    - TEMPERATURE
+    - TIME_POINT
+    - TREATMENT_ARM
+    - UNMODELED_CONDITION
+
+vocabularies:
+  roles:
+    - SUBJECT
+    - OUTCOME
+    - AGENT
+    - COMPARATOR
+    - METHOD
+    - INTERVENTION
+    - MEDIUM
+    - TARGET
+    - PLACE
+    - POPULATION
+    - CONTEXT
+  entity_types:
+    - PLACE
+    - ORGANISM
+    - POPULATION
+    - SAMPLE_SPECIMEN
+    - MATERIAL
+    - CHEMICAL
+    - ENVIRONMENTAL_FEATURE
+    - HEALTH_CONDITION
+    - PROPERTY_METRIC
+    - METHOD
+    - MODEL_ALGORITHM
+    - DATASET
+    - INTERVENTION_ACTION
+    - INFRASTRUCTURE_DEVICE
+    - ORGANIZATION
+    - EVENT_PROCESS
+    - HAZARD_RISK
+    - APPLICATION_USE
+    - TIME_PERIOD
+    - STANDARD_POLICY
+    - OTHER
+  identity_scopes: [CANONICAL, STUDY_INSTANCE]
+  owner_kinds: [CONTEXT, OBSERVATION]
+
+# These are the candidate v1 kinds shared with the extraction notebook.  Raw
+# wording is always retained.  Adding or changing a kind requires a new policy
+# version and a fresh extraction/resolution run.
+qualifiers:
+  aliases: {}
+  kinds:
+    ADMINISTRATIVE_LEVEL:
+      semantic: IDENTITY_BEARING
+      allowed_types: [PLACE]
+      allowed_scopes: [CANONICAL]
+    # Two places sharing a name in different countries are different places:
+    # Niger the Nigerian state is not Niger the republic. Country is therefore
+    # identity-bearing, not merely descriptive.
+    COUNTRY:
+      semantic: IDENTITY_BEARING
+      allowed_types: [PLACE, ENVIRONMENTAL_FEATURE, ORGANIZATION]
+      allowed_scopes: [CANONICAL]
+    # Distinguishes a river, lake, basin or aquifer sharing a place name.
+    FEATURE_CLASS:
+      semantic: IDENTITY_BEARING
+      allowed_types: [ENVIRONMENTAL_FEATURE, PLACE]
+      allowed_scopes: [CANONICAL]
+    AGE_GROUP:
+      semantic: DISAMBIGUATING
+      allowed_types: [POPULATION, ORGANISM, SAMPLE_SPECIMEN]
+      allowed_scopes: [CANONICAL, STUDY_INSTANCE]
+    CHEMICAL_FORM:
+      semantic: IDENTITY_BEARING
+      allowed_types: [CHEMICAL, MATERIAL]
+      allowed_scopes: [CANONICAL, STUDY_INSTANCE]
+    DEPTH_CLASS:
+      semantic: DISAMBIGUATING
+      allowed_types: [SAMPLE_SPECIMEN, ENVIRONMENTAL_FEATURE, INFRASTRUCTURE_DEVICE]
+      allowed_scopes: [CANONICAL, STUDY_INSTANCE]
+    DEVELOPMENTAL_STAGE:
+      semantic: IDENTITY_BEARING
+      allowed_types: [ORGANISM, POPULATION, SAMPLE_SPECIMEN]
+      allowed_scopes: [CANONICAL, STUDY_INSTANCE]
+    GENETIC_VARIANT_STRAIN:
+      semantic: IDENTITY_BEARING
+      allowed_types: [ORGANISM, POPULATION, SAMPLE_SPECIMEN]
+      allowed_scopes: [CANONICAL, STUDY_INSTANCE]
+    MATERIAL_FORM:
+      semantic: DISAMBIGUATING
+      allowed_types: [MATERIAL, SAMPLE_SPECIMEN]
+      allowed_scopes: [CANONICAL, STUDY_INSTANCE]
+    PROTECTION_STATUS:
+      semantic: DISAMBIGUATING
+      allowed_types: [SAMPLE_SPECIMEN, INFRASTRUCTURE_DEVICE, ENVIRONMENTAL_FEATURE]
+      allowed_scopes: [CANONICAL, STUDY_INSTANCE]
+    QUALITY_GRADE:
+      semantic: DISAMBIGUATING
+      allowed_types: [MATERIAL, SAMPLE_SPECIMEN, CHEMICAL, DATASET]
+      allowed_scopes: [CANONICAL, STUDY_INSTANCE]
+    SEX_GENDER:
+      semantic: DISAMBIGUATING
+      allowed_types: [POPULATION, ORGANISM, SAMPLE_SPECIMEN]
+      allowed_scopes: [CANONICAL, STUDY_INSTANCE]
+    SIZE_CLASS:
+      semantic: DISAMBIGUATING
+      allowed_types: [POPULATION, ORGANISM, SAMPLE_SPECIMEN, MATERIAL, INFRASTRUCTURE_DEVICE]
+      allowed_scopes: [CANONICAL, STUDY_INSTANCE]
+    SOURCE_ORIGIN:
+      semantic: DISAMBIGUATING
+      allowed_types: [POPULATION, ORGANISM, SAMPLE_SPECIMEN, MATERIAL, CHEMICAL, DATASET]
+      allowed_scopes: [CANONICAL, STUDY_INSTANCE]
+    URBAN_RURAL_CLASS:
+      semantic: DESCRIPTIVE
+      allowed_types: [PLACE, POPULATION, SAMPLE_SPECIMEN, ENVIRONMENTAL_FEATURE]
+      allowed_scopes: [CANONICAL, STUDY_INSTANCE]
+    VERSION_VARIANT:
+      semantic: IDENTITY_BEARING
+      allowed_types: [MODEL_ALGORITHM, DATASET, INFRASTRUCTURE_DEVICE, STANDARD_POLICY, METHOD]
+      allowed_scopes: [CANONICAL, STUDY_INSTANCE]
+    UNMODELED_QUALIFIER:
+      semantic: REVIEW_ONLY
+      allowed_types: [PLACE, ORGANISM, POPULATION, SAMPLE_SPECIMEN, MATERIAL, CHEMICAL, ENVIRONMENTAL_FEATURE, HEALTH_CONDITION, PROPERTY_METRIC, METHOD, MODEL_ALGORITHM, DATASET, INTERVENTION_ACTION, INFRASTRUCTURE_DEVICE, ORGANIZATION, EVENT_PROCESS, HAZARD_RISK, APPLICATION_USE, TIME_PERIOD, STANDARD_POLICY, OTHER]
+      allowed_scopes: [CANONICAL, STUDY_INSTANCE]
+
+matching:
+  top_k_candidates: 10
+  score_round_digits: 6
+  # MODEL_SUPPLIED is trusted by explicit project decision. Naming is the one
+  # thing the extraction model may draw from its own knowledge, and a frontier
+  # model is reliable on names; alias agreement is what connects a paper writing
+  # "onugbu" to one writing "Vernonia amygdalina", which is the dominant failure
+  # mode this corpus exists to solve. Every such alias keeps its kind, language
+  # and stated_in_paper flag, so any merge it drove can be reviewed afterwards.
+  trusted_alias_levels: [AUTHORITY, HUMAN_CURATED, REVIEWED_CORPUS, MODEL_SUPPLIED]
+
+  # Candidate recall is blocked before RapidFuzz scoring. These explicit caps
+  # prevent an unmatched mention from degrading into a corpus-wide scan.
+  lexical_blocking:
+    char_ngram_size: 3
+    max_candidate_pool: 64
+    max_postings_per_key: 512
+    max_query_blockers: 24
+    max_labels_per_target: 4
+
+  # Approximate methods are deliberately candidate-only until each type has a
+  # locked calibration set.  Enabling one requires type-specific accept and
+  # margin thresholds here; code never supplies a universal fallback.
+  default_type_policy:
+    self_seed: false
+    # Exact compatible typed names connect automatically. Review is an
+    # orthogonal audit signal, never a prerequisite for graph connectivity.
+    normalized_primary_auto: true
+    lexical:
+      candidate_min_score: 72.0
+      automatic: false
+      accept_score: null
+      min_margin: null
+    embedding:
+      candidate_min_score: 72.0
+      automatic: false
+      accept_score: null
+      min_margin: null
+
+  type_overrides:
+    CHEMICAL:
+      self_seed: true
+      normalized_primary_auto: true
+      lexical: {candidate_min_score: 86.0, automatic: false, accept_score: null, min_margin: null}
+      embedding: {candidate_min_score: 88.0, automatic: false, accept_score: null, min_margin: null}
+    HEALTH_CONDITION:
+      self_seed: true
+      normalized_primary_auto: true
+    PROPERTY_METRIC:
+      self_seed: true
+      normalized_primary_auto: true
+    MODEL_ALGORITHM:
+      self_seed: true
+      normalized_primary_auto: true
+    DATASET:
+      self_seed: true
+      normalized_primary_auto: true
+    STANDARD_POLICY:
+      self_seed: true
+      normalized_primary_auto: true
+      lexical: {candidate_min_score: 88.0, automatic: false, accept_score: null, min_margin: null}
+      embedding: {candidate_min_score: 90.0, automatic: false, accept_score: null, min_margin: null}
+    OTHER:
+      self_seed: false
+      normalized_primary_auto: false
+      lexical: {candidate_min_score: 90.0, automatic: false, accept_score: null, min_margin: null}
+      embedding: {candidate_min_score: 90.0, automatic: false, accept_score: null, min_margin: null}
+    ORGANISM:
+      self_seed: true
+      normalized_primary_auto: true
+      lexical: {candidate_min_score: 82.0, automatic: false, accept_score: null, min_margin: null}
+      embedding: {candidate_min_score: 85.0, automatic: false, accept_score: null, min_margin: null}
+    PLACE:
+      self_seed: true
+      normalized_primary_auto: true
+      lexical: {candidate_min_score: 82.0, automatic: false, accept_score: null, min_margin: null}
+      embedding: {candidate_min_score: 85.0, automatic: false, accept_score: null, min_margin: null}
+    POPULATION: {self_seed: true}
+    SAMPLE_SPECIMEN: {self_seed: true}
+    # Form and origin remain descriptive unless the controlled qualifier policy
+    # explicitly marks them identity-bearing; exact compatible material names
+    # still connect and preserve all descriptive metadata downstream.
+    MATERIAL: {self_seed: true, normalized_primary_auto: true}
+    # Groundwater, soil and rainfall are the substance of this corpus and are
+    # named plainly. The genuine homonym - Niger the river against Niger the
+    # state - is separated by FEATURE_CLASS, which is identity-bearing.
+    ENVIRONMENTAL_FEATURE: {self_seed: true, normalized_primary_auto: true}
+    METHOD: {self_seed: true}
+    INTERVENTION_ACTION: {self_seed: true}
+    INFRASTRUCTURE_DEVICE: {self_seed: true}
+    ORGANIZATION: {self_seed: true}
+    EVENT_PROCESS: {self_seed: true}
+    HAZARD_RISK: {self_seed: true}
+    APPLICATION_USE: {self_seed: true}
+    TIME_PERIOD: {self_seed: true}
+
+  instance_concept_compatibility:
+    PLACE: [PLACE]
+    ORGANISM: [ORGANISM]
+    POPULATION: [POPULATION, ORGANISM]
+    SAMPLE_SPECIMEN: [SAMPLE_SPECIMEN, MATERIAL, CHEMICAL, ORGANISM, ENVIRONMENTAL_FEATURE]
+    MATERIAL: [MATERIAL]
+    CHEMICAL: [CHEMICAL]
+    ENVIRONMENTAL_FEATURE: [ENVIRONMENTAL_FEATURE]
+    HEALTH_CONDITION: [HEALTH_CONDITION]
+    PROPERTY_METRIC: [PROPERTY_METRIC]
+    METHOD: [METHOD]
+    MODEL_ALGORITHM: [MODEL_ALGORITHM]
+    DATASET: [DATASET]
+    INTERVENTION_ACTION: [INTERVENTION_ACTION]
+    INFRASTRUCTURE_DEVICE: [INFRASTRUCTURE_DEVICE]
+    ORGANIZATION: [ORGANIZATION]
+    EVENT_PROCESS: [EVENT_PROCESS]
+    HAZARD_RISK: [HAZARD_RISK]
+    APPLICATION_USE: [APPLICATION_USE]
+    TIME_PERIOD: [TIME_PERIOD]
+    STANDARD_POLICY: [STANDARD_POLICY]
+    OTHER: []

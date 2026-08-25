@@ -1,10 +1,13 @@
 # Proposed MUFASA Entity Resolution Module
 
-**Status:** draft proposal awaiting review and approval; no implementation exists yet. Do not implement from this document until it has been reviewed.
+**Status:** draft proposal awaiting review and approval. Prototype code and test
+scaffolding may be built against this draft, as explicitly authorized, but they
+do not make the design or its outputs production-authoritative. No production
+registry commit or full-corpus run is approved by this document.
 
 **Location of this specification:** `03-retrieval/entity-resolution-design.md`
 
-This document consolidates the proposed corrections to `entity-canonicalisation.md`. It does not supersede that file yet, and neither document is an approved implementation contract. Any disagreement remains open until this proposal is reviewed.
+This document consolidates the proposed corrections to `entity-canonicalisation.md`. It does not supersede that file yet, and neither document is an approved production contract. Any disagreement remains open until this proposal is reviewed; an accompanying prototype must implement the complete draft contract rather than silently replacing difficult parts with weaker alternatives.
 
 ## 1. Purpose
 
@@ -15,7 +18,7 @@ In plain terms, it must answer two different questions:
 1. **What shared scientific concept is this?** For example, `groundwater`, `nitrate`, `malaria`, or `Minna`.
 2. **Is this a particular thing inside one study?** For example, one borehole sample, one experimental group, or one monitoring station.
 
-The resolver must connect genuinely identical concepts without erasing scientifically meaningful differences. When the evidence is insufficient, it must abstain and send the mention to review. A correct unresolved result is safer than a false merge that invents agreement between papers.
+The resolver must connect genuinely identical concepts without erasing scientifically meaningful differences. Every valid `CANONICAL` mention with a controlled entity type other than `OTHER` receives a durable concept mapping: compatible exact normalized names and trusted aliases connect automatically, while a clean unmatched mention seeds a concept automatically. Review is a downstream quality flag and filter, not a prerequisite for that mapping. Only explicit hard conflicts--incompatible type or scope, conflicting authority identity, conflicting identity-bearing qualifier values, or an active cannot-link--prevent a merge. `STUDY_INSTANCE` identity remains paper/context-scoped.
 
 ## 2. Proposed architectural shape
 
@@ -30,8 +33,11 @@ MUFASA/
 |       |-- contracts.py
 |       |-- normalization.py
 |       |-- authorities.py
+|       |-- policy.py
 |       |-- matching.py
 |       |-- registry.py
+|       |-- validation.py
+|       |-- audit.py
 |       |-- pipeline.py
 |       |-- io.py
 |       |-- evaluation.py
@@ -39,7 +45,7 @@ MUFASA/
 |       |   |-- __init__.py
 |       |   `-- mufasa.py
 |       `-- policies/
-|           `-- mufasa-v1.yaml
+|           `-- mufasa-v2-candidate.1.yaml
 |-- tests/
 |   `-- entity_resolution/
 `-- 03-retrieval/
@@ -64,8 +70,11 @@ Each file has one job:
 | `contracts.py` | Immutable records, enums, schemas, and invariants |
 | `normalization.py` | Non-destructive creation of typed comparison keys |
 | `authorities.py` | Read-only access to pinned authority snapshots |
+| `policy.py` | Versioned policy loading, validation, and capability preflight |
 | `matching.py` | Candidate generation, features, conflicts, and decisions |
 | `registry.py` | Concepts, aliases, instances, IDs, and lineage |
+| `validation.py` | Fail-closed input, decision, cluster, and registry invariants |
+| `audit.py` | Decision traces, conflicts, review records, and append-only events |
 | `pipeline.py` | Deterministic batch orchestration and public operations |
 | `io.py` | Generic readers/writers, hashing, manifests, and atomic publication |
 | `adapters/mufasa.py` | Corpus eligibility and conversion of MUFASA Parquets into core records |
@@ -87,7 +96,15 @@ manifest-approved parsed papers
 
 Resolution happens **after extraction**, as a separate batch pass. The extraction model never chooses or invents canonical IDs.
 
-The current `llm-claim-extraction.ipynb` is an unrun, unapproved prototype. Its tables and vocabularies are candidate contracts, not established facts or proven outputs. They become the resolver input contract only after the extraction design is reviewed and the staged extraction pilots in Section 6 pass. Until then, statements in this document describe intended behaviour rather than completed capability.
+Extraction and resolution nevertheless share one versioned seam. Before a
+resolver run is admissible, extraction must have produced source-grounded
+mention atoms with stable source groups, controlled qualifier kinds and
+condition names, explicit owner-evidence-versus-study-context provenance, and verified raw-text
+locations. The resolver may consume those fields but may not repair, infer, or
+silently weaken them. Changes to this seam require a new extraction-contract
+version and invalidate downstream cached resolution artifacts.
+
+The current `llm-claim-extraction.ipynb` remains an unapproved prototype. It has been exercised during development, but it has not completed the required successful live pilot, so its tables and vocabularies remain candidate contracts rather than established production outputs. They become the resolver input contract only after the extraction design is reviewed and the staged extraction pilots in Section 6 pass. Until then, statements in this document describe intended behaviour rather than completed capability.
 
 For the first corpus build, the resolver works corpus-wide against a frozen registry so results do not depend on paper order. After registry version 1 is frozen, later papers can resolve incrementally against the same read-only snapshot. New proposals from one paper never become candidates for later papers inside that run. They are periodically reconciled in another deterministic batch and become visible only after an explicit registry commit.
 
@@ -151,7 +168,7 @@ For example, extraction may turn `deep borehole groundwater sample` into:
 
 It must not assert that this physical sample is identical to every other groundwater sample.
 
-The original surface wording is always retained. All atoms derived from one source phrase share a stable `source_mention_id`, so the decomposition can be reconstructed and audited. A suspicious compound that reaches the resolver undecomposed is flagged for review rather than guessed apart.
+The original surface wording is always retained. All atoms derived from one source phrase share a stable `source_mention_id`, so the decomposition can be reconstructed and audited. A suspicious compound that is otherwise a valid controlled canonical mention may keep its exact mapping with a downstream review flag; the resolver never guesses a new decomposition. A malformed or semantically invalid atom remains invalid input.
 
 Atomicity alone is not enough. Extraction must also preserve every meaningful concept and identity-relevant qualifier. Returning only `groundwater` would be atomic but incomplete if the source also identified a borehole and a depth. Conversely, a genuine proper name must not be split merely to improve an atomicity score.
 
@@ -169,7 +186,7 @@ The proposed implementation rules are:
 8. The proposed extraction contract uses controlled type and role vocabularies instead of free-form type and role invention. There is no predicate field: atomic observations use candidate controlled statement-kind, direction, result-basis, role, and condition fields. This remains to be proven by the extraction pilots.
 9. The resolver handles each mention occurrence, not only each unique string. `Niger`, `spring`, and `RF` can mean different things in different contexts.
 10. Study context is inherited by observations but is not copied into every entity label.
-11. The extractor or MUFASA input adapter must emit evidence-backed, context-owned `PLACE` mentions. The resolver resolves those mentions; it never mines labels or conditions to manufacture a missing place. The earlier Bosso/Minna example did contain the place in its study context, so structured upstream emission—not resolver guesswork—is the correction.
+11. The extractor or MUFASA input adapter must emit evidence-backed, context-owned `PLACE` mentions. The resolver resolves those mentions; it never mines labels or conditions to manufacture a missing place. The earlier Bosso/Minna example did contain the place in its study context, so structured upstream emission--not resolver guesswork--is the correction.
 12. One observation must contain one atomic result. Multi-sample or multi-value arrays are split upstream into scalar observations with a shared comparison-group ID.
 13. Blank or absent measurements remain missing. The resolver does not infer them.
 14. Unit conversion is a separate normalization module. Entity resolution preserves reported measurements and units unchanged.
@@ -178,6 +195,17 @@ The proposed implementation rules are:
 17. Every atom remains linked to its original source phrase and evidence.
 18. Decomposition must be both pure and complete: one concept per atom, no meaningful concept or identity-relevant qualifier omitted, and no improper splitting of genuine names.
 19. The resolver never invents or canonicalizes legacy free-form predicates.
+20. Exact compatible place names connect across papers. Two valid mentions of
+    `Minna` therefore share one place concept without waiting for review.
+21. Type and explicit identity qualifiers still separate real homonyms: `Niger`
+    as a `PLACE` is distinct from `Niger` as an `ENVIRONMENTAL_FEATURE`; Niger
+    State and the Republic of Niger differ by explicit country/administrative
+    qualifiers; and a Niger river and Niger basin differ by `FEATURE_CLASS`.
+22. Missing place or feature disambiguation adds a post-merge flag. It is not
+    treated as an invented conflicting value.
+23. For materials, `MATERIAL_FORM`, `SOURCE_ORIGIN`, and `QUALITY_GRADE` remain
+    descriptive or disambiguating and do not split the shared material concept.
+    `CHEMICAL_FORM` is identity-bearing and explicit unequal chemical forms do.
 
 ## 6. Input contract
 
@@ -192,35 +220,171 @@ The generic module accepts immutable mention records plus optional contextual re
 | `study_contexts.parquet` | Study design, population, place, and inherited context |
 | `evidence_spans.parquet` | Source wording and page-level traceability |
 | `extraction_status.parquet` | Confirms that extraction succeeded |
-| Extraction manifest and run summary | Supplies source, schema, prompt, model, and settings hashes through one composed run descriptor |
+| Extraction `current-generation.json`, per-generation `generation.json`, manifest, and run summary | Selects one complete immutable output generation and supplies its table hashes plus source, schema, prompt, model, and settings hashes |
 | `mufasa_corpus/manifests/documents.parquet` | Authoritative document eligibility and provenance |
 
 An optional, separately provenance-tracked `authority_hints.parquet` may attach an external identifier to a mention before resolution. The current extraction schema does not emit external authority IDs, so exact-ID matching is unavailable when this enrichment is absent.
 
 These extraction Parquets are proposed outputs of the unapproved LLM extraction notebook; none has yet been produced by a completed run. The completed parsed corpus currently supplies only the document manifest and per-paper parsed artifacts. The generic resolver core receives validated mention records plus a normalized context object. Corpus eligibility, table joins, decomposition validation, and observation atomicity are responsibilities of the MUFASA adapter before it invokes the core.
 
-The candidate extraction seam will be tested with the following required mention fields:
+### Required extraction preparation
 
-- `mention_id`;
-- `source_mention_id`, shared by every atom derived from one source phrase;
-- `source_evidence_id` plus the source phrase's character offsets within that evidence span;
-- `paper_id`;
-- `owner_kind` and `owner_id`;
-- `role`;
-- exact `surface_text`;
-- semantic `atom_text`;
-- controlled `entity_type`;
-- `identity_scope` of `CANONICAL` or `STUDY_INSTANCE`;
-- structured qualifiers;
-- extraction schema and prompt versions through the run manifest.
+The extraction notebook must not treat an exceptional long paper as one
+unstructured character block. It first builds an immutable source map from the
+parser output and then creates structural chunks with conservative hard bounds
+on the **fully rendered source text**, including provenance markers. The
+provider exposes no pinned tokenizer for this model, so the candidate notebook
+must not call a character limit an exact token limit; prompt and rendered-source
+character counts remain recorded pilot diagnostics. Section paths,
+page numbers, table rows, captions, footnotes, and raw page-relative offsets are
+retained; a table is not separated from the caption or headers needed to
+interpret it. Any controlled overlap is deduplicated by verified source
+location and semantic atom keys, not by model order.
 
-`source_evidence_id`, exact surface text, and character offsets are verified or assigned deterministically against immutable parser-derived text; model-supplied offsets are never trusted without verification. `source_mention_id` is derived from `paper_id + source_evidence_id + verified source offsets`. `mention_id` is derived from that source group plus stable role, atom, type, scope, and qualifier keys after deterministic sorting and duplicate removal. Neither ID may depend on model list order or DataFrame row position.
+Study context is extracted once as a distinct stage. Observation extraction
+then operates on structural passages and tables and may inherit only an
+explicitly linked context record. A later pass is a targeted repair for a
+detected validation failure or likely omission class, such as negation,
+conditions, or a table row; identical repeated extraction passes are not merged
+by character overlap.
+
+If the validated context task returns no supported context, the pipeline adds
+one evidence-free `C0` paper container with
+`context_origin = DETERMINISTIC_EMPTY_CONTAINER`. Its scientific fields,
+conditions, entities, and evidence are empty. It permits owner-evidence claims
+to retain a context foreign key, but can never supply inherited entities or
+masquerade as a reported study context. Model-extracted contexts carry
+`context_origin = MODEL_EXTRACTED`, exact source anchors, and a separate content
+hash. A real `context_id` is derived from paper/source identity plus sorted
+verified evidence anchors; model wording is not its identity. A deterministic
+ordinal is used only for distinct contexts that genuinely share the same anchor
+set.
+
+Every model task carries a stable `task_id`, source and chunk hashes,
+model/settings/prompt/schema versions, attempt count, `finish_reason`, refusal
+information, and validation result. A valid response has exactly one
+non-refusal choice and `finish_reason == "stop"`. Empty, refused, truncated,
+malformed, missing, duplicated, or task-ID-mismatched responses are failures,
+not successful zero-extraction documents. A non-empty, schema-valid response
+whose scientific list is empty is different: after every expected task
+reconciles, the paper may publish `status == "complete"` with
+`empty_supported = true` and `observation_count = 0`. The pilot audits these
+papers for omissions. Only a complete, reconciled expected task ledger may
+publish `status == "complete"` in `extraction_status.parquet` for resolver input.
+
+The model-facing entity JSON contains exactly:
+
+- `source_mention_local_id`, shared by atoms derived from one source phrase;
+- `source_evidence_local_id`, referring to an evidence object's `local_id`;
+- `provenance_scope` of `OWNER_EVIDENCE` or `STUDY_CONTEXT`;
+- `role`, `surface_text`, `atom_text`, `entity_type`, `identity_scope`,
+  `instance_local_id`, `qualifiers`, and `aliases`.
+
+Every model-facing evidence object carries a task-local `local_id` in addition
+to its exact `quote` and reported `page`. An entity's
+`source_evidence_local_id` must resolve to an evidence object owned by the same
+payload or to the explicitly linked study-context evidence allowed by its
+`provenance_scope`.
+
+Local IDs are grouping and foreign-key handles inside one model task, never
+durable corpus identity. The notebook resolves them against immutable source
+text and creates the following required final mention columns:
+
+- `mention_id` and `source_mention_id`;
+- `source_evidence_id`;
+- `source_page`, plus nullable `source_char_start` and `source_char_end` populated
+  only for a unique exact occurrence;
+- `source_occurrence_count` and `source_occurrences_json` containing every exact
+  raw page-local occurrence;
+- `source_alignment_status` of `EXACT_UNIQUE` or `EXACT_AMBIGUOUS`;
+- `paper_id`, `owner_kind`, `owner_id`, and `provenance_scope`;
+- `role`, exact `surface_text`, semantic `atom_text`, controlled `entity_type`,
+  `identity_scope`, `instance_local_id`, structured qualifiers, and
+  provenance-preserving `aliases_json`;
+- `qualifier_vocab_version` and `extraction_schema_version`.
+
+`source_occurrences_json` is a deterministically sorted JSON array whose objects
+have exactly `page`, `char_start`, and `char_end`. Offsets are zero-based and
+end-exclusive within immutable parser-native page text. Evidence occurrence
+records use the same object shape.
+
+`EXACT_UNIQUE` means there is one selected occurrence and slicing the immutable
+raw `source_page` text at `source_char_start:source_char_end` reproduces `surface_text`
+exactly. `EXACT_AMBIGUOUS` retains all exact candidate spans in
+`source_occurrences_json`, leaves the singular start and end null, and is never
+resolved automatically. The notebook never chooses the first repeated string
+arbitrarily. Normalized or fuzzy text search may help a reviewer discover a
+candidate, but it never manufactures raw offsets or upgrades an ambiguous or
+ungrounded mention into valid extraction output.
+
+One narrow deterministic exception handles parser layout damage before strict
+validation. It may collapse Unicode whitespace, remove a soft hyphen, or join a
+letter split only as `letter-hyphen-whitespace-letter`, and only when that
+projection identifies exactly one span inside the already supplied block and
+page. The stored value is then replaced with the original parser-native slice;
+case, punctuation, spelling, word order, evidence ownership, page, and IDs are
+never changed. Every such repair is hashed and logged. Zero or multiple matches
+remain invalid. This is raw-span recovery, not fuzzy or semantic grounding.
+
+`OWNER_EVIDENCE` means the linked evidence belongs directly to the entity's
+owner. `STUDY_CONTEXT` means the mention is inherited explicitly from an
+evidence-backed study-context record. It never pretends that an inherited
+place, population, or period occurred inside the observation quote. The
+referenced context evidence must itself be valid and exact.
+
+`source_mention_id` is derived only from immutable source identity: `paper_id`,
+source hash, raw page, exact `surface_text`, and the frozen sorted occurrence
+set. It is independent of an owner-specific evidence-row ID, so the same raw
+phrase inherited by several observations retains one source-group ID. For an
+ambiguous occurrence it remains an audit identifier and can never enter the
+automatic lane. `mention_id` adds `owner_kind + owner_id` and the stable role,
+atom, type, identity scope, provenance scope, and canonical qualifier keys after
+deterministic sorting and duplicate removal. Thus one source atom may be
+attached to several observations without an ID collision, while those rows
+remain grouped by `source_mention_id`. Neither ID may depend on model list
+order, chunk order, retry order, or DataFrame row position.
 
 The null `canonical_id` and `UNRESOLVED` fields currently written by extraction are compatibility placeholders. The resolver must not overwrite the raw extraction table.
 
+Every validated source observation carries `assertion_status = "REPORTED"`.
+This is deterministic extractor semantics assigned after grounding validation,
+not a claim the model is asked to classify.
+Extraction never labels an ungrounded or inferred statement as reported.
+`DERIVED` is reserved for a separate inference artifact and graph layer with an
+explicit support-chain provenance record; it is never counted as source
+evidence, paper support, or paper contradiction. `REVIEW_REQUIRED` is a
+workflow decision, not an assertion type that permits an ungrounded statement
+to bypass validation.
+
 ### Candidate controlled vocabulary for version 1
 
-The following enums are candidates taken from the untested extraction notebook. They are not frozen and must be reviewed against pilot output before freezing the production extraction and resolver contracts.
+The following enums are candidates synchronized with the extraction notebook. They are not frozen and must be reviewed against a successful pilot output before freezing the production extraction and resolver contracts.
+
+The synchronized prototype identifies this candidate seam as:
+
+- `SCHEMA_VERSION = "2.3-candidate.1"`;
+- `PROMPT_VERSION = "mufasa-extraction-2.3-candidate.1"`;
+- `QUALIFIER_VOCAB_VERSION = "mufasa-qualifier-v1.1-candidate.1"`;
+- `CONDITION_VOCAB_VERSION = "mufasa-condition-v1.0-candidate.1"`;
+- `RESOLVER_POLICY_VERSION = "mufasa-resolver-policy-v2-candidate.1"`;
+- `RESOLVER_CODE_VERSION = "mufasa-entity-resolution-0.2.0-candidate.1"`.
+
+Version 2.2 retains the `instance_local_id` and `aliases_json` seam introduced
+by the 2.1 prototype, adds `COUNTRY` and `FEATURE_CLASS` to the closed qualifier
+vocabulary, and synchronizes the connectivity-first resolver and post-merge
+review contract. These changes require new schema, prompt, qualifier, policy,
+and code versions; old artifacts are never reinterpreted in place.
+
+Candidate 2 records `paper_profiles.coverage_complete` and
+`extraction_status.context_coverage_complete`. A rare paper whose complete body
+does not fit the bounded context task receives a transparent partial profile:
+`missing_content` must be null, the profile is queued for later audit, and its
+uncertain profile judgement cannot exclude otherwise valid extraction rows from
+resolution. This avoids both an extra LLM pass and a false whole-paper claim.
+
+These strings describe the draft pilot contract only; changing any field,
+enum, prompt rule, or validator requires a new version rather than an in-place
+reinterpretation.
 
 **Roles:** `SUBJECT`, `OUTCOME`, `AGENT`, `COMPARATOR`, `METHOD`,
 `INTERVENTION`, `MEDIUM`, `TARGET`, `PLACE`, `POPULATION`, `CONTEXT`.
@@ -236,6 +400,31 @@ The following enums are candidates taken from the untested extraction notebook. 
 
 **Owner kinds:** `CONTEXT`, `OBSERVATION`.
 
+**Qualifier kinds:** `ADMINISTRATIVE_LEVEL`, `COUNTRY`, `FEATURE_CLASS`,
+`AGE_GROUP`, `CHEMICAL_FORM`, `DEPTH_CLASS`, `DEVELOPMENTAL_STAGE`, `GENETIC_VARIANT_STRAIN`,
+`MATERIAL_FORM`, `PROTECTION_STATUS`, `QUALITY_GRADE`, `SEX_GENDER`,
+`SIZE_CLASS`, `SOURCE_ORIGIN`, `URBAN_RURAL_CLASS`, `VERSION_VARIANT`,
+`UNMODELED_QUALIFIER`.
+
+`COUNTRY` is identity-bearing for `PLACE`, `ENVIRONMENTAL_FEATURE`, and
+`ORGANIZATION`. `FEATURE_CLASS` is identity-bearing for a named environmental
+feature, distinguishing, for example, a river from a basin with the same name.
+The extractor emits either qualifier only when the supplied paper or its
+validated study context states the value; it never guesses a missing country or
+feature class. Two explicit unequal values are a hard identity conflict. A
+value present on one mention and absent on another is uncertainty, not a
+contradiction: an otherwise exact compatible match proceeds and receives a
+post-merge missing-disambiguator review flag.
+The concept stores the deterministic union of compatible known identity
+qualifiers. A later explicit value may enrich a previously unknown field; it
+may not overwrite a different explicit value.
+
+**Condition names:** `BASELINE_STATUS`, `DISEASE_STAGE`, `DOSE_EXPOSURE`,
+`DURATION`, `ENVIRONMENTAL_STATE`, `EXPERIMENTAL_SETTING`,
+`MEASUREMENT_SETTING`, `PH`, `PRESSURE`, `SALINITY`, `SAMPLING_SETTING`,
+`SEASON`, `STATISTICAL_THRESHOLD`, `TEMPERATURE`, `TIME_POINT`,
+`TREATMENT_ARM`, `UNMODELED_CONDITION`.
+
 An off-list enum value is not silently converted to `OTHER`: extraction retries
 it, and an exhausted case is preserved as invalid for review. `OTHER` is an
 explicit allowed choice only when no approved type fits. Physical Parquet fields such as
@@ -243,13 +432,34 @@ explicit allowed choice only when no approved type fits. Physical Parquet fields
 parses them into typed internal records. `surface_text` is copied from evidence,
 whereas `atom_text` is a semantic extraction and need not be a literal span.
 
-Qualifier kinds require a small versioned controlled vocabulary before even the
-first extraction pilot. `OTHER` or `UNKNOWN`, if retained, are themselves
-members of that enum. A model-emitted off-list spelling may be mapped only by a
-versioned deterministic alias map; otherwise extraction retries it and an
-exhausted case is preserved as audit-invalid. Free-form `qualifier.kind` values
-are never valid typed output or positive matching evidence. Raw qualifier
-wording is always preserved.
+`aliases_json` is required and contains a deterministic list of objects with
+exactly `text`, controlled alias `kind`, `language`, and `stated_in_paper`.
+Model-supplied aliases are trusted identity evidence whether
+`stated_in_paper` is `true` or `false`. This is the sole outside-knowledge
+exception: the extraction model may supply alternative names for the same
+entity, but it may not use memory to add scientific claims, values,
+relationships, conditions, or evidence. Broader, narrower, related, or merely
+co-occurring concepts are never aliases.
+
+Each qualifier record has exactly `kind` and `value_text`; each condition record
+has exactly `name` and `value_text`. Qualifier `kind` and condition `name` use
+the separate versioned closed vocabularies above in the extraction prompt,
+validator, resolver policy, and run manifest. They are not arbitrary labels.
+`UNMODELED_QUALIFIER` and `UNMODELED_CONDITION` preserve genuinely encountered
+values that the candidate vocabulary cannot yet represent. They cannot act as
+positive matching evidence, but they add a post-merge review flag rather than
+withholding an otherwise compatible exact canonical mapping. Their recurrence
+triggers vocabulary review.
+
+A model-emitted off-list spelling may be mapped only by a versioned
+deterministic alias map; otherwise extraction retries it and an exhausted case
+is preserved as audit-invalid. It is never silently converted to an
+`UNMODELED_*` sentinel.
+Free-form qualifier or condition labels are never valid typed output or
+positive matching evidence. Raw `value_text` is always preserved and must be
+evidence-grounded. If a condition value also denotes a resolvable entity, the
+extractor emits an evidence-linked entity mention as well; the resolver never
+canonicalizes a string hidden only inside `conditions_json`.
 
 ### Corpus eligibility
 
@@ -264,7 +474,30 @@ Eligibility is the intersection of:
 
 **Dated audit note (2026-08-11, not a permanent design constant):** the current manifest has 17,049 rows and 10,321 rows with `pipeline_status == "ok"`. Review statuses remain excluded unless a signed, typed, versioned override admits them. An override can never bypass rights or retraction rules. Orphan or stale files cannot be overridden; they must first be reconciled into the authoritative manifest with matching hashes and provenance.
 
-The resolver consumes extraction tables, not PDFs or Markdown. If source text is needed for an audit, the adapter reconstructs `{corpus_root}/parsed/structured/{paper_id}.json` rather than trusting obsolete absolute Kaggle paths. It verifies the local `paper_id`, `openalex_id`, PDF hash, and parse/identity status against the manifest and computes a structured-content hash for the run. Parser-derived page text, page numbers, offsets, parser version/configuration, and their hashes remain immutable; repaired or normalized text is stored separately. Null quality values mean unknown, not zero, and page-level structured metadata is consulted when manifest summaries are absent.
+The resolver consumes extraction tables, not PDFs or Markdown. Parser-produced
+structured JSON is the authoritative source map. Markdown may be used only as a
+hash-verified fallback whose content and page reconstruction agree with the
+manifest and structured artifact; it never silently replaces mismatched source
+text. If source text is needed for an audit, the adapter reconstructs
+`{corpus_root}/parsed/structured/{paper_id}.json` rather than trusting obsolete
+absolute Kaggle paths. It verifies the local `paper_id`, `openalex_id`, PDF
+hash, and parse/identity status against the manifest and computes a
+structured-content hash for the run. Parser-derived page text, page numbers,
+offsets, parser version/configuration, and their hashes remain immutable;
+repaired or normalized text is stored separately. Null quality values mean
+unknown, not zero, and page-level structured metadata is consulted when
+manifest summaries are absent.
+
+The completed legacy `documents.parquet` may omit the
+`parser_config_hash` column even though every eligible structured sidecar
+contains it. Extraction therefore verifies each selected sidecar against the
+manifest's paper, OpenAlex, PDF, parser, parse, and identity fields, requires a
+non-blank sidecar `parser_config_hash`, and populates that value only in the
+in-memory extraction descriptor and source fingerprint. It never mutates the
+authoritative ingestion manifest. A present manifest value must match exactly;
+a missing sidecar, blank hash, corrupt JSON, or mismatch fails closed. The
+resolver recomputes the same enrichment before checking the extraction source
+fingerprint.
 
 The adapter preserves raw metadata and derives typed comparison fields separately. In particular, DOI may be a full `https://doi.org/...` value or missing, while publication date and citation count require explicit parsing rather than string comparison.
 
@@ -275,13 +508,29 @@ Before matching begins, the module validates:
 - source hashes and schema versions;
 - unique mention IDs and unique primary IDs in the observation, context, and evidence tables; repeated mention `owner_id` foreign keys are valid;
 - referential integrity between mentions, contexts, observations, evidence, and documents;
+- task-local evidence IDs are unique in their payload and every
+  `source_evidence_local_id` resolves under the declared `provenance_scope`;
 - controlled type, role, and identity-scope values;
 - valid qualifier JSON;
 - controlled qualifier kind and permitted value/type for the applicable entity type and identity scope;
+- valid condition JSON with a controlled condition name; an unmodelled
+  condition cannot become matching evidence and adds a downstream review flag;
 - complete `source_mention_id` and evidence linkage for every atom;
 - consistent source groups in which all atoms trace to the same exact source phrase;
-- suspicious compound mentions, which are retained and routed to review using semantic policy checks rather than token count;
+- `EXACT_UNIQUE` source alignment and verified raw-slice equality for every mention
+  admitted to automatic resolution;
+- `source_occurrence_count == len(source_occurrences_json)`; `EXACT_UNIQUE`
+  has exactly one occurrence and non-null singular offsets, while
+  `EXACT_AMBIGUOUS` has more than one occurrence and null singular offsets; all
+  occurrences in either status remain within the recorded `source_page`;
+- valid `provenance_scope`; a `STUDY_CONTEXT` mention must point to an eligible
+  context record with its own exact evidence;
+- suspicious compound mentions, which retain any valid exact mapping but carry
+  a downstream review flag; a genuinely malformed or non-atomic mention remains
+  invalid rather than being guessed apart;
 - duplicate atoms caused by overlapping extraction chunks;
+- complete reconciliation of expected extraction task IDs, response counts,
+  finish reasons, refusals, retries, and terminal statuses;
 - at most one scalar or one complete range per quantitative observation, never both; qualitative observations may have neither;
 - document and extraction eligibility.
 
@@ -296,7 +545,7 @@ The staged pilot is:
 1. run the existing ten test papers;
 2. inspect and correct the contract, prompt, and validator;
 3. proceed only after that smoke test passes;
-4. run a representative 50–100-paper pilot spanning all MUFASA domains, document qualities, tables, long names, and both identity scopes;
+4. run a representative 50--100-paper pilot spanning all MUFASA domains, document qualities, tables, long names, and both identity scopes;
 5. freeze the approved extraction contract before the full run.
 
 Before either run, its sample, rubric, and thresholds are recorded in a versioned pilot policy. Thresholds cannot be chosen after seeing the results.
@@ -315,14 +564,26 @@ The pilot also reports:
 
 - `OTHER` share and correctness by domain and entity role;
 - allowed and observed qualifier kinds, with **zero off-list kinds** in valid output;
+- allowed and observed condition names, with **zero off-list names** in valid output;
+- `UNMODELED_QUALIFIER` and `UNMODELED_CONDITION` rates, examples, and projected
+  review workload;
 - mentions per 1,000 source words rather than only mentions per paper;
 - duplicate-mention rate from overlapping chunks;
+- exact raw-alignment rate, ambiguous-occurrence rate, and raw-slice integrity;
+- recall by source structure, including narrative passages, later sections,
+  tables, captions, and footnotes;
+- `OWNER_EVIDENCE`-versus-`STUDY_CONTEXT` provenance accuracy;
 - explicit context-place recovery where a place is stated;
 - atomic handling of table rows, samples, scalar values, and ranges.
 
 A low `OTHER` rate is not automatically good: it may mean the model forced unfamiliar entities into incorrect allowed types. `OTHER` cases are sampled for correctness, and repeated patterns trigger vocabulary review. Semantic atomicity is never judged by a word-count or conjunction rule.
 
-Every successful output row must be structurally valid, source-linked, and free of off-list qualifier kinds. The owner-approved purity, completeness, improper-split, type/scope, and place-recovery thresholds must also pass before production extraction. Any critical loss or semantic conflation of distinct referents stops approval even if an average score passes.
+Every successful output row must be structurally valid, source-linked, exactly
+raw-aligned, and free of off-list qualifier kinds and condition names. The
+owner-approved purity, completeness, improper-split, type/scope, provenance,
+structure-specific recall, and place-recovery thresholds must also pass before
+production extraction. Any critical loss or semantic conflation of distinct
+referents stops approval even if an average score passes.
 
 ## 7. Registry design
 
@@ -337,6 +598,8 @@ One row per shared concept:
 - `concept_id`;
 - preferred label;
 - controlled entity type;
+- `identity_qualifiers_json`, identity-bearing qualifiers as canonical
+  structured JSON;
 - lifecycle status;
 - creation and update run IDs;
 - registry version;
@@ -350,37 +613,91 @@ One row per study-local instance:
 - `paper_id` and `context_id`;
 - local label and type;
 - zero or one primary `concept_id` for its authoritative `INSTANCE_OF` target;
-- identity-bearing qualifiers;
+- `identity_qualifiers_json`;
+- `source_mention_ids_json`, the durable sorted source mentions attached to the
+  instance;
 - creation and update run IDs.
 
 That `concept_id` field is the source of truth for the primary `INSTANCE_OF` link; the graph exporter derives the edge from it. Confirmed cross-publication lineage is stored separately and can never be inferred from a shared `family_id` alone.
+
+An existing instance is accepted automatically only when the exact stable
+`source_mention_id` is already attached in `source_mention_ids_json`. Equal
+labels inside the same paper/context are candidates for review, not identity
+proof. Bootstrap instance keys include `source_mention_id`, so two same-labelled
+samples in one context never collapse merely because their text matches.
 
 #### `mention_resolutions.parquet`
 
 One row for every input mention, including unresolved mentions:
 
 - all source identifiers and original wording;
-- `source_mention_id` and its evidence pointer;
+- `source_mention_id`, raw page/start/end offsets, exact surface text, all exact
+  source occurrences, `source_alignment_status`, and its evidence pointer;
+- `provenance_scope`;
+- controlled role, entity type, identity scope, and canonical qualifiers;
 - nullable `concept_id` and `instance_id`;
 - nullable `proposal_id` for a dry-run concept or instance proposal;
 - decision status and reason codes;
 - decision method;
+- `review_needed`, `review_flags_json`, and `review_priority`, which are
+  independent of decision status and may accompany a committed `concept_id` or
+  `instance_id`;
 - feature scores and runner-up margin;
 - calibrated probability only when calibration is valid;
-- policy, resolver, registry, authority, and run versions;
+- extraction `output_generation_id` plus policy, resolver, registry, authority,
+  and run versions;
 - reviewer decision and override provenance.
 
 ### Supporting tables
 
-- `canonical_aliases.parquet`: one scoped alias per row, including language, region, type, source, trust level, and version.
+- `canonical_aliases.parquet`: one scoped alias per row, including language,
+  region, type, source, trust level, alias kind, `stated_in_paper`, source
+  mention, model/prompt/run provenance, and version. `MODEL_SUPPLIED` is a
+  trusted level under this project policy.
 - `canonical_authority_links.parquet`: one external authority identifier and snapshot version per concept link.
 - `entity_relations.parquet`: authority-backed or reviewed concept-to-concept relations such as `IS_A`; it never duplicates identity or the primary instance link.
+- `entity_redirects.parquet`: durable old-to-current ID redirects created by
+  reviewed merges or supersessions; redirects never erase lineage.
+- `resolution_constraints.parquet`: versioned human or authority-backed
+  must-link and cannot-link constraints, including scope and provenance.
 - `resolution_candidates.parquet`: top-K and review-bound candidates with feature traces. Exact accepted matches retain compact reason codes instead of an unbounded candidate history; the run policy defines K and retention.
+- `resolution_conflicts.parquet`: hard cannot-links, authority conflicts,
+  incompatible qualifiers, cluster inconsistencies, and their dispositions;
+  conflicts are retained and never overwritten by the winning decision.
+- `resolution_memo.parquet`: disposable version-keyed decision memo records;
+  this accelerates identical work but is never registry truth.
 - `resolution_events.parquet`: append-only creation, merge, split, reassignment, alias, review, and supersession history.
-- `resolution_review.csv`: a human-friendly queue; it is not the source of truth.
+- `resolution_review.csv`: a human-friendly downstream queue built from review
+  flags as well as unresolved or invalid rows; it is not the source of truth
+  and never gates an otherwise valid exact merge or registry commit.
+- `registry_diff.json`: proposed and committed additions, changes, redirects,
+  and unchanged counts between two immutable registry snapshots.
 - `run_manifest.json`: hashes and versions needed to reproduce the run.
 
-The review unit is normally one ambiguous alias, candidate pair, or proposed cluster—not every repeated mention occurrence. A reviewed decision may propagate only to occurrences that pass the same type, scope, qualifier, context, and cannot-link checks. Every propagated mapping is still written separately to `mention_resolutions.parquet` with the originating review event.
+The review unit is normally one ambiguous alias, candidate pair, or proposed
+cluster--not every repeated mention occurrence. Review normally inspects or
+corrects a mapping that already exists; it is not required before graph use. A
+reviewed correction may propagate only to occurrences that pass the same type,
+scope, qualifier, context, and cannot-link checks. Every propagated mapping is
+still written separately to `mention_resolutions.parquet` with the originating
+review event.
+
+Alias learning is continuous, not bootstrap-only. When a mention matches an
+existing concept, its normalized surface/atom variants and every trusted model
+alias are added to that concept's alias set during commit, with full provenance
+and an `ADD_ALIAS` event. Thus a name used to resolve one batch remains
+available to later batches. If a trusted alias bridge reaches several existing
+concepts that are mutually compatible, the resolver deterministically chooses
+the stable survivor, records redirects and merge events, and preserves every
+old ID. It never chooses the first candidate silently. Explicit hard conflicts
+keep the concepts separate and are recorded in the conflict artifact.
+
+Each decision also records a `candidate_set_hash` over the stable candidate IDs,
+features, hard conflicts, and score inputs. A reusable memoized decision is
+keyed by that hash together with the mention-context hash, policy, registry,
+authority, normalization, and model versions. A changed context, candidate set,
+policy, authority snapshot, or human constraint invalidates the cached decision;
+the cache is an optimization, never registry truth.
 
 IDs are persistent opaque identifiers created only at commit time, never row numbers, names, or current batch positions. For a new accepted cluster, the implementation selects the lowest stable source `mention_id` as its immutable seed and derives a namespaced UUID from that seed; once committed, later additions never change it. Proposal IDs are hashes of the frozen cluster membership and policy version. Existing registry IDs always win over newly derived IDs. Merges retain redirects; splits create new IDs and lineage events. No registry history is deleted.
 
@@ -403,7 +720,7 @@ The authority interface supports this cascade:
 
 Authority records, aliases, crosswalks, versions, and licences are cached as pinned local snapshots. The core resolution run has no network dependency. Only the used, licence-compatible authority subset is packaged.
 
-Exact compatible authority identifiers may be used after the extraction semantics and authority mapping are validated; they do not require a fuzzy-matching gold set. Curated aliases, crosswalks, and approximate authority-name matches are activated per type only after they improve measured resolution-gold performance without violating precision gates.
+Exact compatible authority identifiers may be used after the extraction semantics and authority mapping are validated; they do not require a fuzzy-matching gold set. Exact type-scoped aliases from authorities, human curation, reviewed corpus records, and the extraction model are trusted automatic identity evidence. Model aliases remain fully provenance-tracked whether the paper stated them or the model supplied them from naming knowledge. Approximate authority-name matches remain candidate or review signals until calibrated; they are not silently promoted to exact aliases.
 
 Before any authority data is downloaded, the acquisition recipe records the required geographic or scientific scope, files, version date, licence/attribution, checksum, and refresh policy. Authority downloads can proceed alongside pilot work, but downloading a large global snapshot is not itself a project milestone and does not unblock an unapproved extraction contract.
 
@@ -417,13 +734,23 @@ The first corpus run does not require manual approval of every new concept. Regi
 
 1. freeze the eligible mentions, approved versioned extraction contract, policy, and any pinned authority snapshots;
 2. group exact compatible authority IDs when supplied;
-3. group trusted curated aliases and collision-free, type-safe exact normalized names allowed by policy;
-4. create separate stable local concepts for clean unmatched canonical mentions and singleton groups;
+3. group trusted aliases, including model-supplied aliases, and compatible
+   type-safe exact normalized names for every controlled `CANONICAL` type other
+   than `OTHER`;
+4. create stable local concepts automatically for clean unmatched canonical
+   mentions and singleton groups;
 5. create paper-and-context-scoped study instances separately;
-6. keep fuzzy synonym groups, conflicting labels, and ambiguous cases as review candidates;
+6. keep hard-conflicting identities separate, and self-seed rather than
+   force-merge unsupported fuzzy candidates; attach downstream review flags
+   where uncertainty remains;
 7. validate all clusters and publish the accepted snapshot atomically as registry version 1.
 
-This deliberately prefers temporary duplicate concepts over fabricated merges. A normal clean singleton does not require individual human approval; review is reserved for ambiguous or high-impact proposed merges and extraction defects. Fuzzy automatic matching remains disabled for each entity type until that type passes resolution-gold calibration.
+No valid exact canonical mapping waits for human approval. Compatible exact
+names and trusted aliases connect immediately; clean unmatched mentions seed
+immediately. For similarity-only cases, a temporary duplicate concept is safer
+than a fabricated merge and can carry a `POTENTIAL_DUPLICATE` review flag.
+Fuzzy automatic matching remains disabled for each entity type until that type
+passes resolution-gold calibration.
 
 ### Step 1: Freeze the run
 
@@ -435,21 +762,44 @@ Create separate matching keys while preserving the original text. Normalization 
 
 Derived comparison keys may be lossy, but normalization is non-destructive and auditable because the untouched raw text is retained beside every key. It is not proof of identity. Curated spelling variants and acronym expansions are aliases, not generic normalization rules. Do not ASCII-fold stored African place names, personal names, scientific names, chemical symbols, or units.
 
+`COUNTRY` comparison keys use a pinned local ISO country-name/code map so, for
+example, `Nigeria` and `NG` compare consistently while both raw values remain
+stored. `FEATURE_CLASS` uses a small versioned deterministic alias map for
+spelling variants only; it never turns a related feature class into an identity
+match.
+
 ### Step 3: Route by identity scope
 
 - `CANONICAL` mentions follow the shared-concept path.
 - `STUDY_INSTANCE` mentions follow the paper/context-scoped path.
-- `OTHER`, malformed, or suspiciously compound mentions enter review. Weak-source flags are derived only from recorded fields such as owner review status, evidence exact-match status, parser warnings, low-text pages, and OCR metadata.
+- `OTHER` and malformed mentions do not enter the exact canonical auto-connect
+  lane. Suspicious compounds and weak-source conditions remain visible through
+  downstream review flags or invalid-input records; a review flag by itself
+  never removes an otherwise valid concept mapping.
 
 ### Step 4: Apply high-certainty matches
 
 In descending order of trust:
 
 1. an exact compatible authority identifier, but only when an optional pre-enrichment record actually supplies that identifier;
-2. an exact trusted, type-scoped, human-curated alias;
-3. a collision-free normalized primary-name match permitted by that type's policy.
+2. an exact trusted, type-scoped alias from an authority, human curator,
+   reviewed corpus record, or the extraction model;
+3. a compatible normalized primary-name match for a controlled canonical type.
 
-Any collision or hard conflict blocks automatic acceptance.
+An explicit hard conflict blocks that proposed identity. A name collision
+without an explicit type, scope, authority, identity-qualifier, or cannot-link
+conflict does not create a manual gate: compatible concepts are consolidated
+deterministically and uncertainty is recorded as a post-merge flag.
+
+Exact normalized grouping and unmatched self-seeding are enabled for every
+valid controlled `CANONICAL` entity type except `OTHER`. This includes places,
+organisms, materials, environmental features, organizations, and time periods:
+two papers using the same compatible normalized name must reach the same graph
+concept. Homonym risk is recorded after the merge, especially when a place or
+named environmental feature lacks `COUNTRY`, `ADMINISTRATIVE_LEVEL`, or
+`FEATURE_CLASS`. Missing context is not a hard conflict. Two explicit
+incompatible values remain separate. `STUDY_INSTANCE` records never use this
+cross-paper rule.
 
 ### Step 5: Generate candidates
 
@@ -461,7 +811,7 @@ Candidate retrieval has two separate paths:
 Candidates are then recalled through:
 
 - authority and crosswalk indexes;
-- curated alias indexes;
+- trusted alias indexes, including model-supplied aliases;
 - normalized, character, and token indexes;
 - type-specific scientific keys;
 - vector similarity as a recall aid only.
@@ -472,7 +822,7 @@ Embeddings never prove identity and cannot override a hard conflict.
 
 The score uses type-appropriate evidence such as:
 
-- exact or curated alias agreement;
+- exact or trusted alias agreement;
 - authority agreement;
 - acronym expansion;
 - scientific-name or chemical-form agreement;
@@ -484,7 +834,7 @@ Type, authority, taxonomic rank, geographic hierarchy, chemical form, version, a
 
 ### Step 7: Decide conservatively
 
-Every mention receives one of these statuses:
+Every mention receives one identity status:
 
 - `MATCHED`;
 - `NEW_CONCEPT_PROPOSED`;
@@ -493,19 +843,40 @@ Every mention receives one of these statuses:
 - `UNRESOLVED`;
 - `INVALID_INPUT`.
 
-There is no universal string or cosine threshold. Score-based and approximate methods receive independently calibrated acceptance and margin thresholds by entity type. Deterministic exact-ID, trusted-alias, and bootstrap rules use explicit hard policy checks rather than statistical thresholds. Low similarity alone never means “create a new entity.” A close runner-up means ambiguity and therefore review.
+Review is not an identity status gate. Each decision also carries independent
+`review_needed`, `review_flags_json`, and `review_priority` fields. Thus a
+`MATCHED` or automatically accepted proposal can be available to GraphRAG and
+also appear in the later review queue.
+
+There is no universal string or cosine threshold. Score-based and approximate methods receive independently calibrated acceptance and margin thresholds by entity type. Deterministic exact-ID, trusted-alias, normalized-name, and bootstrap rules use explicit hard policy checks rather than statistical thresholds. Low similarity alone never proves identity: absent stronger evidence, the mention self-seeds as a separate concept and may be flagged as a potential duplicate. A close runner-up is a downstream review signal rather than a reason to withhold an exact mapping.
 
 ### Step 8: Reconcile new concepts
 
-New concepts first exist as dry-run proposals, not live registry mutations. Bootstrap proposals satisfying the deterministic singleton or exact-group rules above are policy-approved automatically; all other within-batch mentions may group automatically only through strong equivalence evidence, such as the same compatible authority ID or a collision-free trusted exact key.
+New concepts first exist as dry-run proposals, not live registry mutations.
+Deterministic singleton, compatible exact-normalized, trusted-alias, and exact
+authority groups are policy-approved automatically. The explicit commit step is
+an integrity and publication boundary, not a human-approval queue.
 
-An unambiguous clean canonical mention may seed a local concept automatically only when its type policy permits self-seeding, it has no candidate above that type's review floor, it has no unknown identity-relevant qualifier, and all hard checks pass. Fuzzy grouping, authority ambiguity, risky types, and conflicting context require human approval. Unapproved proposals remain visible only in review/debug artifacts; they never enter the production registry or GraphRAG. They do not block unrelated approved changes.
+A valid controlled canonical mention other than `OTHER` seeds a local concept
+automatically when it has no compatible exact target. A missing identity
+qualifier or homonym-prone type adds a review flag but does not prevent seeding,
+matching, commit, or graph use. Explicit hard conflicts stay separate. A
+similarity-only candidate is not force-merged without calibrated evidence; the
+new local concept is committed and the possible duplicate is queued for later
+inspection.
 
 Fuzzy matches never form unrestricted transitive clusters. The resolver must prevent the `A is close to B`, `B is close to C`, but `A is not the same as C` failure. Every proposed cluster must satisfy all pairwise hard constraints and have one coherent type and granularity.
 
 ### Step 9: Validate, then commit atomically
 
-The proposal run first produces a complete dry-run artifact. An explicit commit publishes accepted mappings and approved registry mutations as a new immutable snapshot. `REVIEW_REQUIRED` and `UNRESOLVED` rows, together with their queue, may be published while still pending; they never block unrelated accepted work and never enter the live registry as matches.
+The proposal run first produces a complete dry-run artifact. An explicit commit
+publishes all policy-approved mappings and registry mutations as a new immutable
+snapshot. Post-merge review flags and their queue are published alongside the
+committed IDs; they do not prevent those IDs entering the live registry or
+GraphRAG. `UNRESOLVED` and `INVALID_INPUT` remain visible without IDs. A
+`REVIEW_REQUIRED` status is reserved for a case in which no valid identity
+outcome can be produced because of a genuine contract defect or unresolved hard
+conflict, not ordinary homonym uncertainty.
 
 Worker processes may perform normalization, candidate retrieval, and scoring in parallel. They cannot mutate the registry. Decisions are sorted by stable IDs, and registry publication has one atomic writer. This preserves speed without creating order-dependent identities.
 
@@ -517,6 +888,8 @@ Worker processes may perform normalization, candidate retrieval, and scoring in 
 - No concept contains incompatible controlled entity types.
 - No concept contains conflicting identifiers from the same authority, or cross-authority identifiers without a trusted crosswalk.
 - No automatic match violates an identity-bearing qualifier.
+- Absence of an identity-bearing qualifier never counts as an explicit conflict;
+  it produces a review flag when disambiguation matters.
 - No unresolved or invalid mention disappears from the output.
 - Every accepted decision has machine-readable reasons and provenance.
 - Reordering input cannot change the logical result.
@@ -528,41 +901,55 @@ Resolution-row lifecycles are also fixed:
 
 - a committed `CANONICAL` mention receives `concept_id` but never `instance_id`;
 - a committed `STUDY_INSTANCE` mention receives `instance_id` and may receive one primary `concept_id`;
-- `REVIEW_REQUIRED`, `UNRESOLVED`, and `INVALID_INPUT` receive neither committed ID;
+- a review flag may accompany either committed lifecycle above and never removes
+  its ID;
+- `REVIEW_REQUIRED`, `UNRESOLVED`, and `INVALID_INPUT` receive neither committed
+  ID only when a genuine contract defect or unresolved hard conflict prevents a
+  valid identity outcome;
 - a proposed row carries `proposal_id` instead of a committed ID until commit, after which it becomes a committed mapping.
 
 Licence-tier evidence eligibility is enforced by the graph-export contract, not by identity matching. If a future coverage-only record is allowed to resolve to a concept, its upstream licence-tier flag must remain attached so the graph loader excludes it from supporting/conflicting evidence counts.
 
 ### Precision with minimum useful coverage
 
-False merges are the most damaging error because they manufacture cross-paper support or contradiction. The automatic lane is therefore high precision, while review and unresolved lanes preserve useful text search without fabricated graph edges. Safety cannot be achieved merely by abstaining from everything.
+False merges remain important because they can manufacture cross-paper support
+or contradiction, but systematic under-connection defeats GraphRAG as well.
+The automatic exact lane therefore connects all compatible controlled canonical
+names and trusted aliases, while hard conflicts preserve real distinctions and
+post-merge flags make uncertain cases inspectable. Safety cannot be achieved by
+abstaining from the exact links the graph is intended to provide.
 
 Every release policy therefore contains non-zero gates derived from the resolver pilot on approved extraction output for:
 
 - recall on manually confirmed cross-paper same-concept pairs;
 - automatic resolution coverage among gold-labelled resolvable mentions;
 - candidate recall before adjudication;
-- maximum review workload and unresolved rate;
+- review-flag workload as an operational diagnostic, plus a maximum unresolved
+  rate;
 - a minimum number of automatic decisions sufficient to make precision meaningful.
 
-A zero-match or extremely low-coverage run fails automatically; its precision is undefined or operationally meaningless. Numeric coverage and workload thresholds are frozen after the resolver calibration pilot and before its locked test is inspected. Results are reported by entity type and domain so a strong common type cannot hide failure elsewhere.
+A zero-match or extremely low-coverage run fails automatically; its precision is undefined or operationally meaningless. Numeric coverage and unresolved-rate thresholds are frozen after the resolver calibration pilot and before its locked test is inspected. Review-flag volume is reported for planning but cannot veto compatible exact connectivity. Results are reported by entity type and domain so a strong common type cannot hide failure elsewhere.
 
 Raw cross-paper link count is a diagnostic only, never a release gate. It can be inflated by incorrect broad merges. Correct connectivity is assessed with labelled same-identity recall, cluster precision/recall, and downstream retrieval tests.
 
 ### Review capacity
 
-Review workload is counted as distinct ambiguous alias, candidate-pair, or cluster decisions rather than raw mention occurrences. The pilot estimates cluster tasks per 1,000 mentions and reviewer time. Before production, the owner sets a fixed human-capacity ceiling.
+Review workload is counted as distinct flagged alias, candidate-pair, or cluster decisions rather than raw mention occurrences. The pilot estimates cluster tasks per 1,000 mentions and reviewer time for planning, but no human-capacity ceiling blocks compatible exact merges or production graph construction.
 
-The queue is deduplicated and prioritized by recurrence, risk of a false merge, expected graph/retrieval impact, and uncertainty. One reviewed decision propagates only to compatible occurrences and remains fully auditable. If the queue exceeds capacity, low-impact uncertain cases remain unresolved; automatic thresholds are never weakened simply to empty the queue.
+The queue is deduplicated and prioritized by recurrence, risk of a false merge, expected graph/retrieval impact, and uncertainty. One reviewed correction propagates only to compatible occurrences and remains fully auditable. If the queue exceeds available time, lower-priority flags remain pending without withholding their already committed exact mappings. Automatic rules are never changed merely to empty the queue.
 
-An optional LLM may later summarize context for a reviewer. It must not be the sole basis for an automatic identity merge in version 1.
+An optional LLM may later summarize context for a reviewer. Separately, the
+frontier extraction model's explicit alias records are trusted automatic naming
+evidence under this project decision; their provenance remains visible so a
+later audit can correct a rare mistake without erasing registry history.
 
 ## 11. Reproducibility and resilience
 
 Each run is identified by a fingerprint containing:
 
 - input table hashes;
-- extraction schema and prompt versions;
+- extraction schema, prompt, qualifier-vocabulary, condition-vocabulary,
+  structural-chunker, and raw-aligner versions;
 - policy and calibration versions;
 - registry and authority snapshot versions;
 - normalization version;
@@ -570,7 +957,44 @@ Each run is identified by a fingerprint containing:
 - resolver code revision;
 - all effective controls.
 
-Processing is batched, resumable, and idempotent. Batch outputs are written to temporary files and atomically renamed. The manifest is published only after every required output passes schema and referential-integrity checks. A failed run cannot replace the last good registry.
+Capabilities declared by the active policy are requirements, not suggestions.
+At startup the module verifies every required Python package and version, local
+model file and hash, authority snapshot, and index backend. If one is absent or
+incompatible, the run fails with an actionable dependency report. It never
+silently substitutes a weaker matcher, skips an authority or vector lane, or
+changes an algorithm. A lane may be disabled only explicitly in the versioned
+policy before the run, and that disabled state is prominent in the manifest and
+evaluation report.
+
+Processing is batched, resumable, and idempotent. A logically related set of
+Parquets is never published by replacing live files one by one. Instead, the
+producer derives an immutable `output_generation_id`, writes every table into a
+temporary generation directory, verifies schema, row counts, referential
+integrity, and file hashes, and writes the generation's `generation.json` only
+after every table validates. It then atomically renames that directory into
+`published-generations/<output_generation_id>/` and atomically replaces the
+small `current-generation.json` pointer. That pointer contains the generation
+ID and complete table metadata. A crash before the pointer switch leaves
+the previous generation active.
+
+The extraction adapter accepts only the generation named by
+`current-generation.json` and verifies its `generation.json`, the complete
+expected-table list, and every recorded
+hash before reading. It records `extraction_generation_id` in the resolver run
+manifest and output rows. Resolution-run artifacts use the same whole-directory
+staging and success-marker rule, with the deterministic `run_id` as their
+generation identity. Registry snapshots already follow the immutable-directory
+publication model. A partial, mixed, markerless, or hash-mismatched generation
+fails closed and can never replace the last good extraction, resolution run, or
+registry.
+
+Each deterministic stage may use a content-addressed artifact cache keyed by
+its input hashes, effective configuration, code revision, and all external
+snapshot or model versions. The run manifest records cache hits and misses plus
+the complete expected target set, processed set, failed set, and deleted or
+superseded inputs. Resumption converges on that declared target state; it never
+treats the mere presence of an old output file as proof that the current stage
+completed. A cache entry is disposable acceleration, not authoritative state.
 
 Parallel workers return immutable proposals. Shared mutable state, order-sensitive union operations, and direct worker writes to the registry are forbidden.
 
@@ -593,7 +1017,9 @@ It will:
 
 1. load a frozen input and registry snapshot;
 2. validate the approved extraction contract and its pilot report;
-3. stop before resolution if source grouping, decomposition, qualifier, evidence, or other approved extraction gates fail;
+3. stop before resolution if task reconciliation, raw alignment, source grouping,
+   decomposition, qualifier, condition, assertion, provenance, structural recall,
+   or other approved extraction gates fail;
 4. call the reusable module;
 5. show progress and status/type distributions;
 6. score the extraction and resolution gold sets separately;
@@ -618,10 +1044,13 @@ Each reviewed source phrase maps to the complete expected set of atoms and quali
 - proper-name integrity and improper splitting;
 - entity type, role, and identity scope;
 - qualifier kind, value, and attachment;
-- source-group and evidence linkage;
+- condition name, value, and attachment;
+- source-group, raw alignment, occurrence selection, and evidence linkage;
+- `OWNER_EVIDENCE`-versus-`STUDY_CONTEXT` provenance and reported assertion status;
+- mention recall across prose, later sections, tables, captions, and footnotes;
 - atomic table and measurement handling.
 
-The ten existing papers seed this set only after they are re-extracted and reviewed under the new source-group contract; their legacy claim labels do not automatically become decomposition gold. If they pass, the set expands from the representative 50–100-paper pilot. About 100 manually inspected source groups is an initial diagnostic, not evidence of near-perfect accuracy.
+The ten existing papers seed this set only after they are re-extracted and reviewed under the new source-group contract; their legacy claim labels do not automatically become decomposition gold. If they pass, the set expands from the representative 50--100-paper pilot. About 100 manually inspected source groups is an initial diagnostic, not evidence of near-perfect accuracy.
 
 ### 13.2 Resolution gold set
 
@@ -639,7 +1068,7 @@ The locked ambiguous and high-risk test subset is independently double-annotated
 
 Calibration and final testing use separate locked partitions. Papers, study families, aliases, and canonical entities are grouped so the same identity cannot leak between partitions. The final test includes unseen concepts and unseen aliases. Fuzzy automatic matching is enabled separately for an entity type only after that type has sufficient reviewed calibration evidence; otherwise it remains candidate-only.
 
-After the representative extraction pilot passes, its approved 50–100-paper output supplies a distinct **resolver pilot**. Reviewers label an initial calibration partition and a locked test partition while the deterministic exact/bootstrap lane is implemented and exercised. This pilot measures automatic coverage, candidate recall, ambiguity clusters, and projected review work. It freezes the resolver gates before the locked partition is opened; fuzzy matching remains candidate-only during this stage.
+After the representative extraction pilot passes, its approved 50--100-paper output supplies a distinct **resolver pilot**. Reviewers label an initial calibration partition and a locked test partition while the deterministic exact/bootstrap lane is implemented and exercised. This pilot measures automatic coverage, candidate recall, ambiguity clusters, and projected review work. It freezes the resolver gates before the locked partition is opened; fuzzy matching remains candidate-only during this stage.
 
 ### 13.3 Resolver metrics and release gates
 
@@ -658,7 +1087,13 @@ Metrics are reported overall and by entity type, domain, language, ambiguity cla
 
 The aspirational automatic-match precision target remains at least 99.5%, with a 95% lower confidence bound of at least 99%, zero critical overmerges in the frozen set, zero cross-paper study-instance leakage, and complete audit coverage. The target is evaluated only with a predeclared confidence method and enough automatic decisions to make the bound meaningful.
 
-The versioned policy also freezes non-zero minimums for candidate recall, confirmed same-concept recall, and automatic coverage of gold-resolvable mentions, plus maximum review workload and unresolved rate. Those numeric limits are approved from the resolver calibration pilot before its locked test is opened. A zero-match or extremely low-coverage resolver fails automatically. No raw cross-paper link-count target is used.
+The versioned policy also freezes non-zero minimums for candidate recall,
+confirmed same-concept recall, and automatic coverage of gold-resolvable
+mentions, plus a maximum unresolved rate. Review-flag workload is measured and
+prioritized but is not a pre-merge or production gate. Those numeric identity
+limits are approved from the resolver calibration pilot before its locked test
+is opened. A zero-match or extremely low-coverage resolver fails automatically.
+No raw cross-paper link-count target is used.
 
 ### 13.4 Hybrid retrieval regression
 
@@ -668,26 +1103,35 @@ Their current `OBS-G...` expected-claim identifiers belong to the legacy fixture
 
 These eight questions are development regressions from the ten-paper fixture, not a sufficient independent release benchmark. They must later be supplemented with locked questions from the representative corpus. Related-but-distinct bridge concepts must never be identity-merged merely to make a question traversable.
 
-## 14. Agreed sequence after design approval
+## 14. Agreed prototype and approval sequence
 
-No implementation begins from this draft before owner review. Once approved, the sequence is:
+The owner has authorized a faithful prototype of the extraction seam and
+resolver module while this document remains under review. Prototype execution
+is limited to validation fixtures and staged pilots with dry-run resolution;
+production registry commits and full-corpus resolution still require explicit
+approval. The sequence is:
 
-1. finalize the candidate extraction schema, including source-mention grouping, controlled qualifier kinds, and validator rules;
-2. run and review the existing ten-paper extraction smoke test;
-3. revise until the smoke-test gates pass;
-4. pre-register and run the representative 50–100-paper extraction pilot;
-5. freeze extraction contract version 1 and create the extraction gold set;
-6. label initial resolution calibration and locked-test examples from approved extraction output;
-7. define and pin only the authority subsets justified by the target types, including licences and hashes;
-8. implement the deterministic exact/bootstrap lane while the initial resolution labels are completed;
+1. finalize the candidate extraction schema, including raw source alignment,
+   source-mention grouping, controlled qualifier kinds and condition names,
+   provenance scope, assertion status, structural chunking, and validator rules;
+2. implement the complete reusable resolver module, validators, registry,
+   audit/event outputs, and unit/adversarial fixtures; exact/bootstrap matching
+   operates in dry-run mode and approximate matching remains candidate-only;
+3. run and review the existing ten-paper extraction smoke test and its
+   end-to-end resolver dry run;
+4. revise until both smoke-test gates pass;
+5. pre-register and run the representative 50--100-paper extraction pilot;
+6. freeze extraction contract version 1 and create the extraction gold set;
+7. label initial resolution calibration and locked-test examples from approved extraction output;
+8. define and pin only the authority subsets justified by the target types, including licences and hashes;
 9. run the resolver pilot, expand the resolution gold set, estimate review capacity, and freeze resolver gates;
 10. run full extraction while authority indexing and per-type fuzzy calibration proceed in parallel;
 11. enable fuzzy automatic matching only for types that pass their locked gates;
-12. run corpus-wide resolution and the hybrid retrieval regressions.
+12. run corpus-wide resolution and the hybrid retrieval regressions after explicit production approval.
 
 Full-corpus resolution and final calibration require validated production extraction output. Module-interface design, extraction-contract review, deterministic normalization design, pilot fixtures, and scoped authority planning do not require all 10,321 currently eligible papers to be extracted first.
 
-## 15. Definition of done for the later implementation
+## 15. Definition of done for production approval
 
 The module is ready for production only when:
 
@@ -695,15 +1139,47 @@ The module is ready for production only when:
 - the extraction contract is approved and its ten-paper and representative pilots pass;
 - source-mention grouping makes decomposition auditable, and the extraction pilot/gold set demonstrates measured purity and completeness without improper proper-name splitting;
 - passage-level extraction gold measures omitted-mention precision and recall;
-- zero off-list qualifier kinds occur in valid extraction output;
+- zero off-list qualifier kinds or condition names occur in valid extraction output;
+- unmodelled sentinel and review-flag rates are reported and recurring concepts
+  are incorporated through a new vocabulary version; pending review volume does
+  not block compatible exact mappings;
+- all automatically resolved mentions are `EXACT_UNIQUE`, their raw text slices
+  reproduce their surface text, and ambiguous repeated occurrences remain out
+  of the automatic lane;
+- owner-evidence and study-context provenance is explicit and study-context mentions
+  retain their own exact context evidence;
+- stable source and atom mention IDs do not change with model order, retries,
+  chunk order, DataFrame order, or resume boundaries;
+- extraction task and response ledgers reconcile completely, with no empty
+  response body, refusal, truncation, malformed payload, or missing response
+  recorded as success; schema-valid zero-item papers remain explicit and are
+  audited for omissions;
+- validated source observations are `REPORTED`; any future `DERIVED` artifact is
+  separate, support-chain grounded, and excluded from source-evidence counts;
 - separate extraction and resolution gold sets exist;
 - every eligible mention receives a durable resolution row;
+- every valid controlled canonical mention other than `OTHER` receives a
+  committed concept ID without pre-review; compatible exact names and trusted
+  aliases share IDs, while explicit hard conflicts remain separate;
+- aliases carried by mentions matched to existing concepts are learned with
+  complete provenance and `ADD_ALIAS` events, not only during cold-start concept
+  creation;
+- post-merge review flags survive output round-trips and populate the downstream
+  queue without withholding committed IDs;
 - all hard invariants pass;
 - the gold and adversarial tests pass their release gates;
 - the exact/bootstrap lane is reproducible before any fuzzy lane is enabled;
-- the resolver calibration pilot freezes coverage and review-capacity gates before its locked test is opened;
-- recall, automatic-coverage, and review-capacity gates pass alongside precision gates;
+- the resolver calibration pilot freezes coverage, precision, and unresolved-rate gates before its locked test is opened;
+- recall, automatic-coverage, precision, and unresolved-rate gates pass, while
+  post-merge review workload remains an operational metric;
 - shuffled and resumed runs reproduce the same logical results;
+- extraction and resolution readers accept only the immutable generation named
+  by `current-generation.json`, whose `generation.json`, expected-table list, row counts,
+  schemas, and hashes all verify; interrupted publication leaves the previous
+  generation active;
+- capability preflight proves that every policy-required dependency and local
+  artifact is present; deliberately missing requirements fail rather than
+  invoking a hidden fallback;
 - merge, split, redirect, and human-override history is preserved;
 - the notebook imports the module and contains no resolver logic;
 - production and notebook runs produce the same decisions from the same inputs;
@@ -711,4 +1187,4 @@ The module is ready for production only when:
 - Q-013 through Q-020 pass as hybrid retrieval regressions rather than resolver-only identity tests;
 - all registry and authority artifacts can run offline from pinned, licence-checked snapshots.
 
-If approved and validated, this design would give MUFASA one resolver, one durable identity registry, and one test notebook. Its intended accuracy comes from preserving distinctions, measuring useful coverage, using authoritative evidence where available, and refusing to guess when identity is genuinely uncertain.
+If approved and validated, this design would give MUFASA one resolver, one durable identity registry, and one test notebook. Its intended accuracy comes from connecting compatible exact identities, preserving explicit distinctions, retaining post-merge audit flags, measuring useful coverage, and using authoritative evidence where available.

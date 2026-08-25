@@ -1,0 +1,9 @@
+[
+  {"left": "groundwater", "right": "groundwater", "same_identity": true},
+  {"left": "groundwater", "right": "groundwater table", "same_identity": false},
+  {"left": "groundwater", "right": "groundwater quality", "same_identity": false},
+  {"left": "borehole", "right": "groundwater", "same_identity": false},
+  {"left": "well", "right": "groundwater", "same_identity": false},
+  {"left": "rainwater", "right": "groundwater", "same_identity": false}
+]
+

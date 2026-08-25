@@ -1,0 +1,9 @@
+# Runtime requirements pinned by compatible ranges in policies/mufasa-v1.yaml.
+# Python requirement: >=3.10,<3.14
+pandas>=2.2,<3
+pyarrow>=14,<24
+rapidfuzz>=3,<4
+numpy>=1.26,<3
+PyYAML>=6,<7
+packaging>=23,<27
+
