@@ -1,0 +1,60 @@
+# Model registry.
+#
+# Swap models by editing .env, never code:  MUFASA_MODEL=qwen3-1.7b
+#
+# `file` is resolved against MUFASA_MODELS_DIR. `sha256` is verified by the
+# System Integrity Check screen and recorded in the release manifest; leave it
+# empty until the file is downloaded, then fill it in from
+#   python -c "import hashlib,sys;print(hashlib.sha256(open(sys.argv[1],'rb').read()).hexdigest())"
+#
+# Peak-RAM figures are the estimates from 03-retrieval/milestone1.md and are to
+# be replaced with profiler measurements before REPORT.md.
+
+[models.gemma-3-270m]
+label = "Gemma 3 270M Instruct"
+file = "gemma-3-270m-it-Q8_0.gguf"
+quantization = "Q8_0"
+context = 4096
+expected_peak_ram_gb = 1.0
+notes = "Fast edit-run loop. Too weak to exercise the validator; useful as a lower bound."
+sha256 = ""
+
+[models.qwen3-1_7b]
+label = "Qwen3 1.7B"
+file = "Qwen3-1.7B-Q4_K_M.gguf"
+quantization = "Q4_K_M"
+context = 4096
+expected_peak_ram_gb = 1.6
+notes = "Nearest stand-in to what we ship. Tune against this one."
+sha256 = ""
+
+[models.nanbeige-3b]
+label = "Nanbeige 4.2 3B"
+file = "Nanbeige4.2-3B-Q4_K_M.gguf"
+quantization = "Q4_K_M"
+context = 4096
+expected_peak_ram_gb = 3.2
+notes = "Really ~4B parameters; useful for feeling a tight machine."
+sha256 = ""
+
+[models.mufasa]
+label = "MUFASA"
+file = "mufasa.Q4_K_M.gguf"
+quantization = "Q4_K_M"
+context = 4096
+expected_peak_ram_gb = 1.6
+notes = "The shipped model. This is the file the profiler scores."
+sha256 = ""
+
+# Offline neural text-to-speech. Voices are swapped the same way as models.
+[voices.en_US-lessac-medium]
+label = "English (US) — Lessac"
+file = "en_US-lessac-medium.onnx"
+config = "en_US-lessac-medium.onnx.json"
+sha256 = ""
+
+[voices.en_GB-alba-medium]
+label = "English (GB) — Alba"
+file = "en_GB-alba-medium.onnx"
+config = "en_GB-alba-medium.onnx.json"
+sha256 = ""

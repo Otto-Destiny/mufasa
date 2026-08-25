@@ -71,50 +71,15 @@ venv/
 *.lbug
 *.index
 /model/
+/04-application/backend/bin/
+/04-application/backend/models/
+/04-application/backend/history.jsonl
 
 # Tabular production artifacts. The reviewed public fixture is allowed.
 *.parquet
 !01-data-engineering/samples/classification-benchmark-200.parquet
 
 # Operating-system noise
-.DS_Store
-Thumbs.db
-desktop.ini
-~$*
-
-# Private working notes. Anything named *.local.md stays on the machine that
-# wrote it - raw discussion, half-formed ideas, notes not meant for the repo.
-*.local.md
-
-# ---------------------------------------------------------------------------
-# Judge-facing push. Code and results travel; corpora and weights do not.
-# ---------------------------------------------------------------------------
-
-# Archives. corpus_splits.zip alone is 146 MB.
-*.zip
-
-# The Colab staging folder: parquet tables and a 153 MB markdown archive.
-/upload to colab/
-
-# Test scratch
-/.test_runtime/
-/.pytest_tmp_*/
-
-# Notebooks are ignored by the data-extraction rule above; these five carry
-# results a judge should be able to read without running anything.
-!/01-data-engineering/data-extraction/build-training-set.ipynb
-!/01-data-engineering/data-extraction/split-corpus.ipynb
-!/01-data-engineering/data-extraction/prepare-citation-metadata.ipynb
-!/01-data-engineering/data-extraction/sample-training-set.ipynb
-!/01-data-engineering/data-extraction/production-classification.ipynb
-
-# and the converted scripts
-!/01-data-engineering/data-extraction/pipeline-scripts/
-!/01-data-engineering/data-extraction/pipeline-scripts/*.py
-
-# --- from main -------------------------------------------------------------
-model/
-*.bin
 submission.json
 audit.json
 verdict.json
