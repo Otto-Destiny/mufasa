@@ -27,8 +27,9 @@ It runs offline, on a laptop, in about 800 MB.
 9. [What it looks like in use](#9-what-it-looks-like-in-use)
 10. [Running MUFASA](#10-running-mufasa)
 11. [What we did not build, and why](#11-what-we-did-not-build-and-why)
-12. [Repository map](#12-repository-map)
-13. [Reproducing this](#13-reproducing-this)
+12. [Roadmap](#12-roadmap)
+13. [Repository map](#13-repository-map)
+14. [Reproducing this](#14-reproducing-this)
 
 ---
 
@@ -672,7 +673,74 @@ The architecture is worth reading as a statement of where this goes next: entity
 
 ---
 
-## 12. Repository map
+---
+
+## 12. Roadmap
+
+What exists today is Phase 1: a corpus, a training pipeline, and a model that
+demonstrably knows more African science than the checkpoint it started from.
+The design was always for a larger thing.
+
+```mermaid
+flowchart LR
+    subgraph P1["PHASE 1 — shipped"]
+        A1["10,480 papers"] --> A2["CPT + full SFT"] --> A3["1B model<br/>1.27 GB, offline"]
+    end
+    subgraph P2["PHASE 2"]
+        B1["100,000+ papers"] --> B2["CPT + SFT<br/>+ DPO + RL"] --> B3["substantially<br/>stronger model"]
+    end
+    subgraph P3["PHASE 3"]
+        C1["1,000,000 papers"] --> C2["full retrieval layer<br/>+ knowledge graph"] --> C3["closed-book model<br/>+ open-book system"]
+    end
+    P1 --> P2 --> P3
+    style P1 fill:#2f5d8c,color:#fff
+    style P2 fill:#7d93ad,color:#fff
+    style P3 fill:#c3c9d4
+```
+
+### Phase 2 — scale the corpus, finish the alignment stack
+
+| | now | Phase 2 |
+|---|---:|---:|
+| eligible papers | 10,480 | **100,000+** |
+| training stages | CPT → SFT | CPT → SFT → **DPO → RL** |
+
+**Ten times the corpus.** The classification protocol, extraction pipeline and
+funnel already run unattended; the binding constraint was time, not method.
+Scaling to 100,000 papers is largely a matter of throughput, and the
+[Phase 3 note on acquisition](#11-what-we-did-not-build-and-why) applies here
+too — cleaned open-access full text can supply candidates without re-deriving
+the relevance judgement.
+
+**The alignment stages we built data for but did not run.** The training-set
+builder already emits `dpo_pairs` and `preference_mixed` — chosen/rejected
+pairs with the same grounding and citation contract as the SFT set. DPO was
+scoped, the data exists, and the run did not happen. Reinforcement learning
+over the same preference signal follows it.
+
+We expect this to be where the largest gains are. The SFT run reported in §8.4
+converged at 18% of one epoch on 10,480 papers' worth of derived examples; the
+model is not short of capacity, it is short of data and of the stages that
+teach preference rather than imitation.
+
+### Phase 3 — a million papers, and the retrieval layer
+
+**1,000,000 papers.** Two orders of magnitude beyond Phase 1, which changes
+what the model can be asked. At that scale the question stops being "has anyone
+studied this" and becomes "what does the weight of African evidence say".
+
+**The full retrieval layer, finally built.** Designed and documented in
+[`03-retrieval/`](03-retrieval/) — entity canonicalisation over the 663,518
+entity mentions already extracted, licence-tiered retrieval, and a knowledge
+graph across studies. Phase 1 deliberately spent its time on the corpus and the
+model because the challenge evaluates a raw GGUF; Phase 3 is where the open-book
+half becomes a system rather than a prompt format.
+
+The pairing is the point. A closed-book model that knows the landscape, plus a
+retrieval layer that can produce the exact passage on demand — each covering the
+other's failure mode.
+
+## 13. Repository map
 
 ```
 01-data-engineering/
@@ -698,7 +766,7 @@ slides/             briefing deck and infographics
 
 ---
 
-## 13. Reproducing this
+## 14. Reproducing this
 
 ```bash
 # 1. corpus split — once, read by every later stage
