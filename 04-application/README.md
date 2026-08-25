@@ -1,8 +1,19 @@
 # Application
 
-This layer is MUFASA's offline product surface. The Tauri desktop app is the primary host and controller: it starts the laptop-local service, model and retrieval package. A paired phone gets the same complete Ask, Compare and Coverage experience through a lightweight mobile web app over local Wi-Fi.
+This layer is MUFASA's offline product surface. The laptop-local FastAPI service is live; a Tauri desktop shell can wrap the same UI next.
 
-The phone performs no inference or retrieval and stores no model, database, graph or corpus. It sends requests to the laptop and receives progress, validated answers and selected evidence excerpts. No cloud or internet connection is required.
+## Run
+
+```bash
+# from repo root, after SETUP.md
+cp 04-application/backend/.env.example 04-application/backend/.env
+# set MUFASA_GENERATOR=stub for UI without a GGUF
+python -m uv run mufasa-serve
+```
+
+Open http://127.0.0.1:8756 — Ask (evidence only after validation), Compare, Library, Statistics, History, Integrity, Settings, offline voice via Piper when configured.
+
+Models swap with `MUFASA_MODEL` in `.env` (see `backend/models.toml`).
 
 ![MUFASA application architecture](./images/application-architecture.svg)
 

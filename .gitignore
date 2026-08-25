@@ -120,3 +120,8 @@ audit.json
 verdict.json
 __pycache__/
 *.pyc
+
+# --- from main (application layer) ----------------------------------------
+/04-application/backend/bin/
+/04-application/backend/models/
+/04-application/backend/history.jsonl
