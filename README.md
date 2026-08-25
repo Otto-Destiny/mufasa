@@ -165,13 +165,13 @@ Each paper receives a structured verdict:
 
 On a 1,656-paper labelled benchmark:
 
-```mermaid
-xychart-beta
-    title "Relevance classification outcomes (n=1,656)"
-    x-axis [exclude, include, review]
-    y-axis 0 --> 1000
-    bar [894, 670, 92]
-```
+**Relevance classification outcomes (n=1,656)**
+
+| | papers | |
+|---|---:|---|
+| **excluded** | **894** | ██████████████████████████████ |
+| included | 670 | ██████████████████████ |
+| review | 92 | ███ |
 
 **54% of candidate papers were excluded.** The single most common reason was `affiliation_only` — African authorship with no African research content. That number is the cost of taking the definition seriously, and it is why the corpus is what it claims to be.
 
@@ -181,13 +181,16 @@ A useful property emerged: `african_centrality` is **strongly bimodal** — 725 
 
 10,480 papers survived classification, download and parsing.
 
-```mermaid
-xychart-beta
-    title "Papers by domain"
-    x-axis [HLT, ENV, AGR, ENR, MAT, TEC]
-    y-axis 0 --> 4000
-    bar [3838, 2550, 2401, 787, 599, 305]
-```
+**Papers by domain**
+
+| | papers | |
+|---|---:|---|
+| Health (HLT) | 3,838 | ██████████████████████████████ |
+| Environment (ENV) | 2,550 | ████████████████████ |
+| Agriculture (AGR) | 2,401 | ███████████████████ |
+| Energy (ENR) | 787 | ██████ |
+| Materials (MAT) | 599 | █████ |
+| Technology (TEC) | 305 | ██ |
 
 | domain | papers | share |
 |---|---:|---:|
@@ -243,13 +246,14 @@ flowchart LR
 
 **Author-year citations are resolved against the document, not just metadata.** OpenAlex supplies a candidate; the paper's own first page is then scanned for publication-year and first-author signals. Where they disagree, **the document wins**:
 
-```mermaid
-xychart-beta
-    title "Citation resolution across 10,480 papers"
-    x-axis [verified, metadata, conflict, corrected]
-    y-axis 0 --> 5000
-    bar [4837, 2436, 2006, 1201]
-```
+**Citation resolution across 10,480 papers**
+
+| | papers | |
+|---|---:|---|
+| VERIFIED_DOCUMENT | 4,837 | ██████████████████████████████ |
+| METADATA_ONLY | 2,436 | ███████████████ |
+| CONFLICT | 2,006 | ████████████ |
+| CORRECTED_DOCUMENT | 1,201 | ███████ |
 
 **57% were confirmed or corrected against the paper itself.** `CONFLICT` means the document offered two contradictory years at equal confidence, not that it disagreed with OpenAlex.
 
@@ -302,13 +306,19 @@ The same extracted fact generates both. That is deliberate: a model that has onl
 
 Tag distribution across a 20,000-example sample:
 
-```mermaid
-xychart-beta
-    title "Reasoning categories in the training set (sample of 20,000)"
-    x-axis [factual, reasoning, quant, innov, method, concept, limit, arg, mech]
-    y-axis 0 --> 9000
-    bar [8528, 7611, 7606, 1801, 1738, 1537, 1071, 834, 815]
-```
+**Reasoning categories in the training set (sample of 20,000)**
+
+| | examples | |
+|---|---:|---|
+| FACTUAL | 8,528 | ██████████████████████████████ |
+| REASONING | 7,611 | ███████████████████████████ |
+| QUANTITATIVE | 7,606 | ███████████████████████████ |
+| **INNOVATION** | **1,801** | ██████ |
+| METHOD | 1,738 | ██████ |
+| CONCEPT | 1,537 | █████ |
+| LIMITATION | 1,071 | ████ |
+| ARGUMENT | 834 | ███ |
+| MECHANISM | 815 | ███ |
 
 `INNOVATION` at 1,801 is the category that carries local-alternative reasoning — substituted materials, locally-sourced species, constraint-driven engineering.
 
@@ -423,14 +433,12 @@ A purpose-built probe: 400 cloze items over local concepts — `Xylopia aethiopi
 | conditional win rate | 0.670 | 0.655 |
 | first-token recall@5 (base → CPT) | 0.48 → 0.555 | 0.50 → 0.510 |
 
-```mermaid
-xychart-beta
-    title "African concept span perplexity — lower is better"
-    x-axis [trained, held-out]
-    y-axis 0 --> 24
-    bar [19.30, 20.78]
-    bar [12.84, 14.78]
-```
+**African concept span perplexity - lower is better**
+
+| | base Gemma 3 1B | after CPT | |
+|---|---:|---:|---|
+| trained papers | 19.30 | **12.84** | ██████████████████░░░░░░░░░░ **-33%** |
+| held-out papers | 20.78 | **14.78** | ████████████████░░░░░░░░░░░░ **-29%** |
 
 *(grey = base Gemma 3 1B, blue = after CPT)*
 
@@ -504,23 +512,37 @@ peak memory** — against models up to four times its parameter count.
 
 #### Composite score
 
-```mermaid
-xychart-beta
-    title "Official ADTC composite score — higher is better"
-    x-axis [MUFASA, G3-1B, Q3.5-2B, G4-E2B, G3-4B, LFM-1.2B, Q3.5-4B, Phi4, G4-E4B, LFM-2.6B]
-    y-axis 0 --> 1.0
-    bar [0.9144, 0.7119, 0.6193, 0.5654, 0.5390, 0.5039, 0.4825, 0.4769, 0.4594, 0.4166]
-```
+**Official ADTC composite score - higher is better**
+
+| | score | |
+|---|---:|---|
+| **MUFASA-Gemma3-1B-SFT** | **0.9144** | ██████████████████████████████ |
+| Gemma-3-1B-IT | 0.7119 | ███████████████████████ |
+| Qwen3.5-2B | 0.6193 | ████████████████████ |
+| Gemma-4-E2B-IT | 0.5654 | ███████████████████ |
+| Gemma-3-4B-IT | 0.5390 | ██████████████████ |
+| LFM2.5-1.2B-Thinking | 0.5039 | █████████████████ |
+| Qwen3.5-4B | 0.4825 | ████████████████ |
+| Phi-4-Mini-Reasoning | 0.4769 | ████████████████ |
+| Gemma-4-E4B-IT | 0.4594 | ███████████████ |
+| LFM2.5-2.6B | 0.4166 | ██████████████ |
 
 #### Peak memory — the number that decides whether it runs on your laptop
 
-```mermaid
-xychart-beta
-    title "Peak resident memory (MB) — lower is better"
-    x-axis [MUFASA, G3-1B, LFM-1.2B, Q3.5-2B, LFM-2.6B, Phi4, Q3.5-4B, G3-4B, G4-E2B, G4-E4B]
-    y-axis 0 --> 8000
-    bar [1275, 1366, 1652, 2147, 3253, 4152, 4298, 4388, 4745, 7503]
-```
+**Peak resident memory (MB) - lower is better**
+
+| | peak MB | |
+|---|---:|---|
+| **MUFASA-Gemma3-1B-SFT** | **1,275** | █████ |
+| Gemma-3-1B-IT | 1,366 | █████ |
+| LFM2.5-1.2B-Thinking | 1,652 | ███████ |
+| Qwen3.5-2B | 2,147 | █████████ |
+| LFM2.5-2.6B | 3,253 | █████████████ |
+| Phi-4-Mini-Reasoning | 4,152 | █████████████████ |
+| Qwen3.5-4B | 4,298 | █████████████████ |
+| Gemma-3-4B-IT | 4,388 | ██████████████████ |
+| Gemma-4-E2B-IT | 4,745 | ███████████████████ |
+| Gemma-4-E4B-IT | 7,503 | ██████████████████████████████ |
 
 **1.27 GB peak.** The largest model in the field needs 7.5 GB — nearly six times
 as much, and more than a 8 GB laptop has to spare once an operating system is
@@ -529,21 +551,35 @@ hardware, and it is lower than the 1.6 GB we had estimated.
 
 #### Accuracy and throughput
 
-```mermaid
-xychart-beta
-    title "ARC-Easy accuracy (acc_norm) — higher is better"
-    x-axis [MUFASA, G3-4B, G4-E4B, G4-E2B, Q3.5-4B, G3-1B, Q3.5-2B, Phi4, LFM-2.6B, LFM-1.2B]
-    y-axis 0 --> 1.0
-    bar [0.9, 0.7, 0.7, 0.6, 0.6, 0.5, 0.5, 0.5, 0.2, 0.1]
-```
+**ARC-Easy accuracy (acc_norm) - higher is better**
 
-```mermaid
-xychart-beta
-    title "Generation throughput (tokens/sec) — higher is better"
-    x-axis [LFM-1.2B, G3-1B, MUFASA, Q3.5-2B, LFM-2.6B, G4-E2B, Phi4, G3-4B, G4-E4B, Q3.5-4B]
-    y-axis 0 --> 25
-    bar [23.11, 17.82, 17.45, 11.46, 10.37, 9.89, 7.14, 5.57, 5.47, 5.12]
-```
+| | acc_norm | |
+|---|---:|---|
+| **MUFASA-Gemma3-1B-SFT** | **0.90** | ██████████████████████████████ |
+| Gemma-3-4B-IT | 0.70 | ███████████████████████ |
+| Gemma-4-E4B-IT | 0.70 | ███████████████████████ |
+| Gemma-4-E2B-IT | 0.60 | ████████████████████ |
+| Qwen3.5-4B | 0.60 | ████████████████████ |
+| Gemma-3-1B-IT | 0.50 | █████████████████ |
+| Qwen3.5-2B | 0.50 | █████████████████ |
+| Phi-4-Mini-Reasoning | 0.50 | █████████████████ |
+| LFM2.5-2.6B | 0.20 | ███████ |
+| LFM2.5-1.2B-Thinking | 0.10 | ███ |
+
+**Generation throughput (tokens/sec) - higher is better**
+
+| | tok/s | |
+|---|---:|---|
+| LFM2.5-1.2B-Thinking | 23.11 | ██████████████████████████████ |
+| Gemma-3-1B-IT | 17.82 | ███████████████████████ |
+| **MUFASA-Gemma3-1B-SFT** | **17.45** | ███████████████████████ |
+| Qwen3.5-2B | 11.46 | ███████████████ |
+| LFM2.5-2.6B | 10.37 | █████████████ |
+| Gemma-4-E2B-IT | 9.89 | █████████████ |
+| Phi-4-Mini-Reasoning | 7.14 | █████████ |
+| Gemma-3-4B-IT | 5.57 | ███████ |
+| Gemma-4-E4B-IT | 5.47 | ███████ |
+| Qwen3.5-4B | 5.12 | ███████ |
 
 #### Reading this honestly
 
